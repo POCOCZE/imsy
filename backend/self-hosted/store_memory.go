@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/pococze/incidentanalyzergo/backend/core"
+	"github.com/pococze/imsy/backend/core"
 )
 
 // ! This file is meant only for development purposes and testing.

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pococze/incidentanalyzergo/backend/core"
+	"github.com/pococze/imsy/backend/core"
 )
 
 // encrypts string data to b64 encoded AES-GCM string

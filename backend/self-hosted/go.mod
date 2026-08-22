@@ -1,4 +1,4 @@
-module github.com/pococze/incidentanalyzergo/backend/self-hosted
+module github.com/pococze/imsy/backend/self-hosted
 
 go 1.27
 
@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/pococze/incidentanalyzergo/backend/core v0.3.3
+	github.com/pococze/imsy/backend/core v0.3.3
 )
 
 require (
@@ -23,6 +23,6 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 )
 
-replace github.com/pococze/incidentanalyzergo/backend/core => ../core
+replace github.com/pococze/imsy/backend/core => ../core
 
-replace github.com/pococze/incidentanalyzergo/backend/self-hosted/database => ./database
+replace github.com/pococze/imsy/backend/self-hosted/database => ./database

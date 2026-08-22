@@ -16,8 +16,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pococze/incidentanalyzergo/backend/core"
-	"github.com/pococze/incidentanalyzergo/backend/self-hosted/database"
+	"github.com/pococze/imsy/backend/core"
+	"github.com/pococze/imsy/backend/self-hosted/database"
 )
 
 type PostgresStore struct {
