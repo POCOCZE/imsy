@@ -1,8 +1,67 @@
-# Incident Management System (IMS)
+# Self-hosted, open-source incident management. Encrypted by default
 
-Easily self-hostable, open-source and encrypted by default. Quickly add, edit or remove incidents. Download report or see all incidents in a sortable table with filters!
+## What is IMSy?
 
 ![incident-list](images/list.png)
+
+IMSy is a self-hostable, open-source incident management system. Add, edit and remove incidents, generate reports and browse everything in a sortable, filterable table.
+
+## Features
+
+- Add, edit and remove incidents
+- Sortable, filterable table
+- Export reports
+- Import, export your incidents
+- Encrypted at rest by default
+- Ships as a single binary - container image under 40 MB
+
+## Prerequisites
+
+- Docker and Docker Compose (or alternatives like Podman)
+
+## Try it in 90 seconds
+
+Runs entirely in memory. No database or configuration needed.
+
+```bash
+# create 'imsy' directory and download Docker Compose file into it.
+mkdir imsy; cd imsy
+curl -O https://raw.githubusercontent.com/POCOCZE/imsy/refs/heads/main/docker-compose.yml
+docker compose up -d
+```
+
+In your browser access [localhost:8080](http://localhost:8080)
+
+### Import sample data (optional)
+
+1. Download **incidents.json** file from the root of the repository
+2. Navigate to the very left and *click plus icon*
+3. Import the file you downloaded and click *Submit* button
+4. Navigate to the very left again and *click list icon*
+5. You should see the imported incidents, which you can filter or sort as you want
+
+## Running with Postgres (persistent)
+
+```bash
+# clone repository
+git clone https://github.com/POCOCZE/imsy.git
+cd imsy
+# copy 'compose.env.example' environment file with a different name '.env'
+cp compose.env.example .env
+# edit environment file to you liking
+nano .env
+# run the containers
+docker compose -f docker-compose-full.yml up -d
+```
+
+After that you should be able to access the app UI using: [localhost:8080](localhost:8080)
+
+## Why is the image so small?
+
+The backend compiles to a single static Go binary with no external
+runtime dependencies. The frontend ships as static assets embedded in
+that same binary - so the whole thing runs as one process, one image,
+under 40 MB.
 
 ## REST API endpoints reference
 
@@ -20,8 +79,11 @@ Easily self-hostable, open-source and encrypted by default. Quickly add, edit or
 
 - ✓ Multi-stage Dockerfile
 - ✓ Add `docker-compose.yml`
+- ✓ Tutorial how to run this tool
 - Create OCI rootless images
-- Tutorial how to run this tool
+- Gracefully shutdown on SIGTEM
+- Switch from log.Printf to *slog*
+- Create dedicated page for each incident when clicking on it
 - Create Helm Chart for Kubernetes
 
 ## Screenshots
