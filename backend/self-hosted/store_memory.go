@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/pococze/incidentanalyzergo/backend/core"
+	"github.com/pococze/imsy/backend/core"
 )
 
 // ! This file is meant only for development purposes and testing.
@@ -51,29 +50,16 @@ func (m *MemoryStore) Add(ctx context.Context, incident *core.Incident) (int, uu
 		}
 	}
 
-	// set userID, orgID and createdBy
-	userIDStr := os.Getenv(EnvIncUserID)
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return 0, uuid.Nil, fmt.Errorf("[Add] failed to parse uuidv7: %s", err)
-	}
-	orgIDStr := os.Getenv(EnvIncOrgID)
-	orgID, err := uuid.Parse(orgIDStr)
-	if err != nil {
-		return 0, uuid.Nil, fmt.Errorf("[Add] failed to parse uuidv7: %s", err)
-	}
-
 	incident.ID, err = uuid.NewV7()
 	if err != nil {
 		return 0, uuid.Nil, fmt.Errorf("[Add] failed to create new uuidv7")
 	}
-	// incident.ID = 
-	incident.OrgID = orgID
+	incident.OrgID = incOrgID
 	// set current time if startedAt is missing, since its optinal
 	if incident.StartedAt == nil || incident.StartedAt.IsZero() {
 		incident.StartedAt = CurrentUTCTime()
 	}
-	incident.CreatedBy = userID
+	incident.CreatedBy = incUserID
 	incident.CreatedAt = CurrentUTCTime()
 	incident.UpdatedAt = CurrentUTCTime()
 

@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/pococze/incidentanalyzergo/backend/core"
+	"github.com/pococze/imsy/backend/core"
 )
 
 func TestMTTRSec(t *testing.T) {

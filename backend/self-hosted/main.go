@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pococze/incidentanalyzergo/backend/core"
+	"github.com/pococze/imsy/backend/core"
 )
 
 // * Create dummy organizations and user
@@ -127,11 +127,18 @@ func main() {
 	log.Println("+-----------------------+")
     log.Println("")
 
-    checkEnvironmentVariables()
-
     // Create context - mainly for database timeout
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
+
+    if len(os.Args) > 1 && os.Args[1] == "migrate" {
+        if err := RunDBMigration(ctx); err != nil {
+            log.Fatalf("Failed to run DB migration: %s", err)
+        }
+        os.Exit(0)
+    }
+
+    checkEnvironmentVariables()
 
     var store core.IncidentStorage
     pgConn := os.Getenv(EnvIncPgConn)

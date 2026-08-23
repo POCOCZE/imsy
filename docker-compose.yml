@@ -1,20 +1,9 @@
 services:
-  incident-analyzer:
-    image: ghcr.io/pococze/incident-analyzer:latest
+  imsy:
+    image: ghcr.io/pococze/incidentanalyzergo:edge
     environment:
-      # if TRUE - all data are temporarilly stored in memory, no database needed
-      - INC_DEV_MODE=false
-      - INC_HTTP_PORT=8080
-      - INC_DB_CONN=postgres://<db-user>:<db-pass>@<db-ip>:5432/<db-name>?search_path=public&sslmode=disable
-
-      # ALL required if INC_DEV_MODE=false; generated using: openssl rand -base64 32
-      - ENCRYPTION_KEY=<put-your-unique-key>
-      - TRANSPORT_ENCRYPTION_KEY=<put-your-another-unique-key>
-      - HMAC_ENCRYPTION_KEY=<put-your-another-unique-key>
-
-      # optional: specify UUIDv7, otherwise will be generated on each startup new unique one, example:
-      - INC_ORG_ID=019fdce5-d9f9-7061-ad79-fe8d9675179f
-      - INC_USER_ID=019fdce5-d9f9-7080-bfa0-c73df6c813e2
+      # All data are temporarilly stored in memory, if true
+      - INC_DEV_MODE=true
     restart: unless-stopped
     ports:
       - 8080:8080
