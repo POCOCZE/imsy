@@ -42,4 +42,4 @@ COPY --from=backend-builder /app/backend/self-hosted/server .
 EXPOSE 8080
 
 USER nonroot:nonroot
-CMD [ "/app/server" ]
+ENTRYPOINT [ "/app/server" ]
