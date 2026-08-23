@@ -18,7 +18,7 @@ import (
 var migrationFiles embed.FS
 
 // Run database migrations using pressly/goose library
-func RunDBMigration(ctx context.Context) error {
+func RunDBMigration(ctx context.Context) (err error) {
 	if os.Getenv(EnvIncPgConn) == "" {
 		return fmt.Errorf("[RunDBMigration] Postgres connection string is required to run database migrations. Mandatory env. var. %q", EnvIncPgConn)
 	}
@@ -30,7 +30,11 @@ func RunDBMigration(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("[RunDBMigration] failed to open database connection: %s", err)
 	}
-	defer db.Close()
+	defer func () {
+		if closeErr := db.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
 
 	if err := db.PingContext(ctx); err != nil {
 		return fmt.Errorf("[RunDBMigration] failed to ping database: %s", err)
@@ -49,7 +53,11 @@ func RunDBMigration(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("[RunDBMigration] failed to create new goose provider: %s", err)
 	}
-	defer provider.Close()
+	defer func() {
+		if closeErr := provider.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
 
 	applied, err := provider.Up(ctx)
 	if err != nil {
