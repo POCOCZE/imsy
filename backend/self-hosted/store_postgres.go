@@ -160,7 +160,7 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 		log.Printf("DEBUG: got errNoRows: %s", err)
 		// Incident does not exist - add it
 		// Assign UUIDv7 if not already set
-		log.Printf("DEBUG: Got incidentID %q", incident.ID)
+		// log.Printf("DEBUG: Got incidentID %q", incident.ID)
 		if incident.ID == uuid.Nil {
 			id, err = uuid.NewV7()
 			if err != nil {

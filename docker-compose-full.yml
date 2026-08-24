@@ -28,7 +28,7 @@ services:
       INC_HTTP_PORT: 8080
 
       # Below is required if INC_DEV_MODE=false;
-      INC_DB_CONN: postgres://${DB_USER}:${DB_PASSWORD}@<db-ip>:5432/${DB_NAME}?sslmode=disable
+      INC_DB_CONN: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable
       # Generated using: openssl rand -base64 32
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       TRANSPORT_ENCRYPTION_KEY: ${TRANSPORT_ENCRYPTION_KEY}
