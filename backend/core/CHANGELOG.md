@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.0](https://github.com/POCOCZE/imsy/compare/backend/core/v0.3.3...backend/core/v1.0.0) (2026-08-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* switched to /api/* for backend, moved to pointer func types, minor fixes and updates
+
+### Features
+
+* added embed.FS for static frontend files so OCI image have one binary inside. Dev uses vite proxy. ([ec68652](https://github.com/POCOCZE/imsy/commit/ec68652d21da29167e340a6bcce1e1af5271caac))
+* moved to pointer func type, all messages now share \message\ key displayed in frontend and are more descriptive. ([a327b9a](https://github.com/POCOCZE/imsy/commit/a327b9a4d5eae1098e0f3cf62dc28a69032d4470))
+* switched to /api/* for backend, moved to pointer func types, minor fixes and updates ([249a60f](https://github.com/POCOCZE/imsy/commit/249a60fb645dae4d1d04b20a4d9edceebf45262e))
+
 ## [0.3.3](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/core/v0.3.2...backend/core/v0.3.3) (2026-06-08)
 
 
