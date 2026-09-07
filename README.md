@@ -6,10 +6,26 @@
 
 IMSy is a self-hostable, open-source incident management system. Add, edit and remove incidents, generate reports and browse everything in a sortable, filterable table.
 
+## Table of contents
+
+- [Self-hosted, open-source incident management. Encrypted by default](#self-hosted-open-source-incident-management-encrypted-by-default)
+  - [What is IMSy?](#what-is-imsy)
+  - [Table of contents](#table-of-contents)
+  - [Features](#features)
+  - [Prerequisites](#prerequisites)
+  - [Try it in 90 seconds](#try-it-in-90-seconds)
+    - [Import sample data (optional)](#import-sample-data-optional)
+  - [Running with Postgres (persistent)](#running-with-postgres-persistent)
+  - [Why is the image so small?](#why-is-the-image-so-small)
+  - [REST API endpoints reference](#rest-api-endpoints-reference)
+  - [Roadmap](#roadmap)
+  - [Screenshots](#screenshots)
+  - [Issues \& Contributing](#issues--contributing)
+
 ## Features
 
 - Add, edit and remove incidents
-- Sortable, filterable table
+- Sort, filter or search table of incidents
 - Export reports
 - Import, export your incidents
 - Encrypted at rest by default
@@ -80,8 +96,8 @@ under 40 MB.
 - ✓ Multi-stage Dockerfile
 - ✓ Add `docker-compose.yml`
 - ✓ Tutorial how to run this tool
-- Create OCI rootless images
-- Gracefully shutdown on SIGTEM
+- ✓ Create OCI rootless images
+- ✓ Gracefully shutdown on SIGTEM
 - Switch from log.Printf to *slog*
 - Create dedicated page for each incident when clicking on it
 - Create Helm Chart for Kubernetes
