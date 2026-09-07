@@ -28,4 +28,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
         run: |-
-          gh workflow run docker-publish.yml --ref "$RELEASE_TAG"
+          gh workflow run docker-publish.yml \
+            --repo "${{ github.repository }}" \
+            --ref "$RELEASE_TAG"
