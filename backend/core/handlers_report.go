@@ -2,12 +2,12 @@ package core
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
 // Build and return IncidentReport
-func GetReportHandler(store IncidentStorage) http.HandlerFunc {
+func GetReportHandler(store IncidentStorage, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		severity := r.URL.Query().Get("severity")
 		service := r.URL.Query().Get("service")
@@ -17,14 +17,15 @@ func GetReportHandler(store IncidentStorage) http.HandlerFunc {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			EncodeJSON(w, map[string]string{"message": fmt.Sprintf("%s", err)}, "")
-			log.Printf("%s", err)
+			// log.Printf("%s", err)
+			logger.Error("failed to get all incidents", "error", err, "func", "GetReportHandler")
 			return
 		}
 		report, err := BuildReport(incidents)
 		if err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			EncodeJSON(w, map[string]string{"message": fmt.Sprintf("%s", err)}, "")
-			log.Printf("%s", err)
+			logger.Error("failed to build incident report", "error", err, "func", "GetReportHandler")
 			return
 		}
 
@@ -34,12 +35,12 @@ func GetReportHandler(store IncidentStorage) http.HandlerFunc {
 			if !exist {
 				w.WriteHeader(http.StatusBadRequest)
 				EncodeJSON(w, map[string]string{"message": fmt.Sprintf("severity %s does not exist", severity)}, "")
-				log.Printf("ERR: Severity %s does not exist", service)
+				logger.Error("severity does not exist", "name", severity, "func", "GetReportHandler")
 				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 				EncodeJSON(w, report.BySeverity[severity], "")
-				log.Printf("INFO: Requested %s severity", severity)
+				logger.Info("requested severity", "name", severity, "func", "GetReportHandler")
 				return
 			}
 		// Check if requested only groupped incidents by ServiceName. If so, return it.
@@ -48,19 +49,19 @@ func GetReportHandler(store IncidentStorage) http.HandlerFunc {
 			if !exist {
 				w.WriteHeader(http.StatusBadRequest)
 				EncodeJSON(w, map[string]string{"message": fmt.Sprintf("service %s does not exist", service)}, "")
-				log.Printf("ERR: Service %s does not exist", service)
+				logger.Error("service does not exist", "name", service, "func", "GetReportHandler")
 				return
 			} else {
 				w.WriteHeader(http.StatusOK)
 				EncodeJSON(w, report.ByServices[service], "")
-				log.Printf("INFO: Requested %s severity", service)
+				logger.Info("requested severity", "name", service, "func", "GetReportHandler")
 				return
 			}
 		// Otherwise return whole report.
 		} else {
 			w.WriteHeader(http.StatusOK)
 			EncodeJSON(w, report, "")
-			log.Printf("INFO: Requested all incidents")
+			logger.Debug("requested all incidents", "func", "GetReportHandler")
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -22,12 +23,13 @@ import (
 
 type PostgresStore struct {
 	Pool 	*pgxpool.Pool
+	Logger	*slog.Logger
 	Queries *database.Queries
 	GCM		cipher.AEAD
 	Enc		core.EncIncidentCols
 }
 
-func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, error) {
+func NewPostgresStore(ctx context.Context, connString string, logger *slog.Logger) (*PostgresStore, error) {
 	pool, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("oppening database: %w", err)
@@ -47,16 +49,17 @@ func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, e
 	// build the GCM
 	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
-		log.Fatalf("[NewProductStore] failed to create new aes cipher: %s", err)
+		log.Fatalf("[NewPostgresStore] failed to create new aes cipher: %s", err)
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		log.Fatalf("[NewProductStore] failed to create new gcm: %s", err)
+		log.Fatalf("[NewPostgresStore] failed to create new gcm: %s", err)
 	}
 
 	queries := database.New(pool)
 	return &PostgresStore{
 		Pool: pool,
+		Logger: logger,
 		Queries: queries,
 		GCM: gcm,
 	}, nil
@@ -157,41 +160,41 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 	inc, err := p.GetByName(ctx, incident.Name)
 	var id uuid.UUID
 	if errors.Is(err, pgx.ErrNoRows) {
-		log.Printf("DEBUG: got errNoRows: %s", err)
+		p.Logger.Debug("got (errNoRows) adding unique incident", "error", err)
 		// Incident does not exist - add it
 		// Assign UUIDv7 if not already set
-		// log.Printf("DEBUG: Got incidentID %q", incident.ID)
+		// p.Logger.Debug("Got incidentID %q", incident.ID)
 		if incident.ID == uuid.Nil {
 			id, err = uuid.NewV7()
 			if err != nil {
 				return 0, uuid.Nil, fmt.Errorf("failed to generate UUIDv7: %s", err)
 			}
-			log.Printf("DEBUG: generated UUIDv7 %q", id.String())
+			p.Logger.Debug("generated UUIDv7", "func", "Add", "name", id.String())
 			incident.ID = id
 		}
 		// Assign OrgID if incident does not have it already (could have it in cases when importing a bunch of incidents from file)
 		if incident.OrgID == uuid.Nil {
-			log.Printf("DEBUG: setting incOrgID %q", incOrgID.String())
+			p.Logger.Debug("setting incOrgID", "func", "Add", "name", incOrgID.String())
 			incident.OrgID = incOrgID
 		}
 		// Assign current time to StartedAt field if empty
 		if incident.StartedAt == nil || incident.StartedAt.IsZero() {
-			log.Printf("DEBUG: setting current time to new incident %q for startedAt field", incident.ID.String())
+			p.Logger.Debug("setting current time to new incident for startedAt field", "func", "Add", "name", incident.ID.String())
 			incident.StartedAt = CurrentUTCTime()
 		}
 		// Assign UserID to CreatedBy field
 		if incident.CreatedBy == uuid.Nil {
-			log.Printf("DEBUG: setting incUserID %q", incUserID.String())
+			p.Logger.Debug("setting incUserID", "func", "Add", "name", incUserID.String())
 			incident.CreatedBy = incUserID
 		}
 		// Assign current time to CreatedAt field if not exist
 		if incident.CreatedAt == nil || incident.CreatedAt.IsZero() {
-			log.Printf("DEBUG: setting current time to new incident %q for createdAt field", incident.ID.String())
+			p.Logger.Debug("setting current time to new incident for createdAt field", "func", "Add", "name", incident.ID.String())
 			incident.CreatedAt = CurrentUTCTime()
 		}
 		// Assign current time to UpdatedAt field if not exist
 		if incident.UpdatedAt == nil || incident.UpdatedAt.IsZero() {
-			log.Printf("DEBUG: setting current time to new incident %q for updatedAt field", incident.ID.String())
+			p.Logger.Debug("setting current time to new incident for updatedAt field", "func", "Add", "name", incident.ID.String())
 			incident.UpdatedAt = CurrentUTCTime()
 		}
 
@@ -231,9 +234,9 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 	var duplicateCount int
 	// Must check for names because UUIDs are meant to be unique
 	if inc.Name == incident.Name {
-		log.Printf("DEBUG: found duplicate incident. name: %q", inc.Name)
+		p.Logger.Debug("found duplicate incident", "func", "Add", "name", inc.Name)
 		duplicateCount = 1
-		log.Printf("WARN: incident %q already exist, skipping\n", incident.Name)
+		p.Logger.Warn("skipping incident that already exist", "func", "Add", "name", incident.Name)
 	}
 	return duplicateCount, id, nil
 }

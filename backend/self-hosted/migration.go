@@ -6,7 +6,6 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"os"
 
@@ -18,11 +17,11 @@ import (
 var migrationFiles embed.FS
 
 // Run database migrations using pressly/goose library
-func RunDBMigration(ctx context.Context) (err error) {
+func RunDBMigration(ctx context.Context, logger *slog.Logger) (err error) {
 	if os.Getenv(EnvIncPgConn) == "" {
 		return fmt.Errorf("[RunDBMigration] Postgres connection string is required to run database migrations. Mandatory env. var. %q", EnvIncPgConn)
 	}
-	log.Println("[RunDBMigration] Found pg conn string. Starting database migrations\n")
+	logger.Info("Found pg conn string. Starting database migrations", "func", "RunDBMigration")
 	
 	// Open database and open migration files
 	pgConn := os.Getenv(EnvIncPgConn)
@@ -66,9 +65,9 @@ func RunDBMigration(ctx context.Context) (err error) {
 
 	// print gathered info ot stdout
 	for _, migration := range applied {
-		slog.Info("[RunDBMigration] migration applied", "migration", migration.String())
+		slog.Info("migration applied", "func", "RunDBMigration", "migration", migration.String())
 	}
 
-	slog.Info("[RunDBMigration] Database migrations completed successfully", "count", len(applied))
+	slog.Info("Database migrations completed successfully", "func", "RunDBMigration", "count", len(applied))
 	return nil
 }
