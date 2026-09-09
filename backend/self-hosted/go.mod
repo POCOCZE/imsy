@@ -3,7 +3,7 @@ module github.com/pococze/imsy/backend/self-hosted
 go 1.27
 
 require (
-	github.com/go-playground/validator/v10 v10.30.3
+	github.com/go-playground/validator/v10 v10.30.4
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/pococze/imsy/backend/core v0.3.3
