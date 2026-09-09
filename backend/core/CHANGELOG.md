@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/POCOCZE/imsy/compare/backend/core/v1.0.0...backend/core/v1.0.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* fixed typos and lint errors ([3790ceb](https://github.com/POCOCZE/imsy/commit/3790ceb4ba9bfeee10ccc521c0d31579dcf73cb4))
+
 ## [1.0.0](https://github.com/POCOCZE/imsy/compare/backend/core/v0.3.3...backend/core/v1.0.0) (2026-08-24)
 
 
