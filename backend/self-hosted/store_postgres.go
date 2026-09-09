@@ -160,7 +160,7 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 	inc, err := p.GetByName(ctx, incident.Name)
 	var id uuid.UUID
 	if errors.Is(err, pgx.ErrNoRows) {
-		p.Logger.Debug("got (errNoRows) adding unique incident: %s", err)
+		p.Logger.Debug("got (errNoRows) adding unique incident", "error", err)
 		// Incident does not exist - add it
 		// Assign UUIDv7 if not already set
 		// p.Logger.Debug("Got incidentID %q", incident.ID)

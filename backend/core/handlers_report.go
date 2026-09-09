@@ -18,7 +18,7 @@ func GetReportHandler(store IncidentStorage, logger *slog.Logger) http.HandlerFu
 			w.WriteHeader(http.StatusBadRequest)
 			EncodeJSON(w, map[string]string{"message": fmt.Sprintf("%s", err)}, "")
 			// log.Printf("%s", err)
-			fmt.Errorf("[GetReportHandler] failed to get all incidents %s", err)
+			logger.Error("failed to get all incidents", "error", err, "func", "GetReportHandler")
 			return
 		}
 		report, err := BuildReport(incidents)

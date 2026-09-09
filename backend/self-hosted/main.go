@@ -75,14 +75,16 @@ func checkEnvironmentVariables(logger *slog.Logger) {
         } else if strings.ToLower(isDevModeOnStr) == "true" {
             isDevModeOn = true
         } else {
-            log.Fatalf("unrecognized env var value. expected boolean.", "flag", EnvIncDevMode)
+            logger.Error("unrecognized env var value. expected boolean.", "flag", EnvIncDevMode)
+            os.Exit(1)
         }
     }
 
     // Check Postgres Conn string
     _, exist = os.LookupEnv(EnvIncPgConn)
     if !exist && !isDevModeOn {
-        log.Fatalf("postgres env var not found. format: postgres://user:pass@address:5432/db_name.", "flag", EnvIncPgConn)
+        logger.Error("postgres env var not found. format: postgres://user:pass@address:5432/db_name.", "flag", EnvIncPgConn)
+        os.Exit(1)
     }
     // } else if exist {
     //     logger.Info("✓ found %q env var", EnvIncPgConn)
