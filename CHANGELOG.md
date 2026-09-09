@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1](https://github.com/POCOCZE/imsy/compare/v1.0.0...v1.0.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* fixed pipeline error, added --repo ([76319ec](https://github.com/POCOCZE/imsy/commit/76319ec2e05a1540b0aa6e3eb56dec0e1f21ad0e))
+* fixed typos and lint errors ([3790ceb](https://github.com/POCOCZE/imsy/commit/3790ceb4ba9bfeee10ccc521c0d31579dcf73cb4))
+* updated docs, added table of contents ([aee9e7e](https://github.com/POCOCZE/imsy/commit/aee9e7ed2495b50b7f3795358e561e346a421b7f))
+
 ## [1.0.0](https://github.com/POCOCZE/imsy/compare/v0.7.0...v1.0.0) (2026-08-24)
 
 
