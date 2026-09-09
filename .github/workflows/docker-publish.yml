@@ -1,0 +1,432 @@
+name: Build, Scan, and Publish Container Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: container-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # =========================================================================
+  # 0. PREFLIGHT: Validate tag semantics before executing matrix builds
+  # =========================================================================
+  preflight:
+    name: Validate Release Reference
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify SemVer syntax on tag triggers
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_NAME="${GITHUB_REF_NAME}"
+            # Strict SemVer 2.0.0 regex with leading 'v'
+            SEMVER_REGEX='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$'
+            if [[ ! "${TAG_NAME}" =~ ${SEMVER_REGEX} ]]; then
+              echo "::error::Release reference '${TAG_NAME}' is not valid SemVer. Aborting."
+              exit 1
+            fi
+            echo "Release reference '${TAG_NAME}' is valid SemVer."
+          else
+            echo "Branch reference '${GITHUB_REF_NAME}', skipping SemVer preflight."
+          fi
+
+  # =========================================================================
+  # 1. BUILD: Build per-architecture images & push strictly by digest
+  # =========================================================================
+  build:
+    name: Build (${{ matrix.platform }})
+    needs: [preflight]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            platform-slug: linux-amd64
+          - platform: linux/arm64
+            platform-slug: linux-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Extract deterministic build metadata
+        id: meta-vars
+        run: |
+          set -euo pipefail
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+          # Deterministic timestamp derived from commit date
+          BUILD_DATE=$(git show -s --format=%cI "$GITHUB_SHA")
+          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+          echo "vcs_ref=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "app_version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_version=edge" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # ratchet:docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # ratchet:docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push single-arch image by digest
+        id: build-step
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # ratchet:docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          pull: true
+          labels: |
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.meta-vars.outputs.build_date }}
+            org.opencontainers.image.version=${{ steps.meta-vars.outputs.app_version }}
+          build-args: |
+            VITE_APP_VERSION=${{ steps.meta-vars.outputs.app_version }}
+            BUILD_DATE=${{ steps.meta-vars.outputs.build_date }}
+            VCS_REF=${{ steps.meta-vars.outputs.vcs_ref }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.platform-slug }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform-slug }}
+          sbom: true
+          provenance: mode=max
+
+      - name: Validate and stage raw digest
+        run: |
+          set -euo pipefail
+          DIGEST="${{ steps.build-step.outputs.digest }}"
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Malformed build digest: '${DIGEST}'"
+            exit 1
+          fi
+          mkdir -p "${RUNNER_TEMP}/raw-digests"
+          echo "$DIGEST" > "${RUNNER_TEMP}/raw-digests/${{ matrix.platform-slug }}.txt"
+
+      - name: Upload raw digest artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        with:
+          name: raw-digest-${{ matrix.platform-slug }}
+          path: ${{ runner.temp }}/raw-digests/${{ matrix.platform-slug }}.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  # =========================================================================
+  # 2. SCAN: Runtime non-root inspection & fail-closed vulnerability gating
+  # =========================================================================
+  scan:
+    name: Scan & Verify (${{ matrix.platform }})
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            platform-slug: linux-amd64
+          - platform: linux/arm64
+            platform-slug: linux-arm64
+
+    steps:
+      - name: Checkout repository (source context for SARIF)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download raw digest artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+        with:
+          name: raw-digest-${{ matrix.platform-slug }}
+          path: ${{ runner.temp }}/raw-digest
+
+      - name: Validate digest format
+        id: read-digest
+        run: |
+          set -euo pipefail
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          DIGEST_FILE="${RUNNER_TEMP}/raw-digest/${{ matrix.platform-slug }}.txt"
+          if [[ ! -f "$DIGEST_FILE" ]]; then
+            echo "::error::Digest file not found at: ${DIGEST_FILE}"
+            exit 1
+          fi
+          DIGEST=$(tr -d '[:space:]' < "$DIGEST_FILE")
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Invalid digest format: '${DIGEST}'"
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # ratchet:docker/setup-qemu-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Non-Root Runtime User (.Config.User)
+        run: |
+          set -euo pipefail
+          IMAGE_REF="${REGISTRY}/${IMAGE_NAME}@${{ steps.read-digest.outputs.digest }}"
+          PLATFORM="${{ matrix.platform }}"
+
+          echo "Pulling ${IMAGE_REF} for platform ${PLATFORM}..."
+          docker pull --platform "${PLATFORM}" "${IMAGE_REF}"
+
+          CONFIG_USER=$(docker image inspect --format '{{.Config.User}}' "${IMAGE_REF}")
+          echo "Verified runtime User for ${PLATFORM}: '${CONFIG_USER}'"
+
+          if [[ "${CONFIG_USER}" != "nonroot:nonroot" ]]; then
+            echo "::error::Security violation: .Config.User is '${CONFIG_USER}', expected exactly 'nonroot:nonroot'"
+            exit 1
+          fi
+
+      - name: Generate SARIF report (all severities & secrets)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # ratchet:aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_PLATFORM: ${{ matrix.platform }}
+        with:
+          image-ref: ghcr.io/${{ env.IMAGE_NAME }}@${{ steps.read-digest.outputs.digest }}
+          format: 'sarif'
+          output: trivy-${{ matrix.platform-slug }}.sarif
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          scanners: 'vuln,secret'
+          exit-code: '0'
+
+      - name: Upload SARIF report to GitHub Security
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # ratchet:github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles(format('trivy-{0}.sarif', matrix.platform-slug)) != ''
+        with:
+          sarif_file: trivy-${{ matrix.platform-slug }}.sarif
+          category: trivy-${{ matrix.platform-slug }}
+
+      - name: Enforce Security Gate (Fail on HIGH / CRITICAL CVEs or Secrets)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # ratchet:aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_PLATFORM: ${{ matrix.platform }}
+        with:
+          image-ref: ghcr.io/${{ env.IMAGE_NAME }}@${{ steps.read-digest.outputs.digest }}
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          scanners: 'vuln,secret'
+          exit-code: '1'
+
+      - name: Stage validated digest
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/validated-digests"
+          echo "${{ steps.read-digest.outputs.digest }}" > "${RUNNER_TEMP}/validated-digests/${{ matrix.platform-slug }}.txt"
+
+      - name: Upload validated digest artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        with:
+          name: validated-digest-${{ matrix.platform-slug }}
+          path: ${{ runner.temp }}/validated-digests/${{ matrix.platform-slug }}.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  # =========================================================================
+  # 3. PUBLISH: Promote validated digests to multi-arch index & verify release
+  # =========================================================================
+  publish:
+    name: Publish Multi-Arch Manifest
+    needs: [scan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Download all validated digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/validated-digests
+          pattern: validated-digest-*
+          merge-multiple: true
+
+      - name: Validate digest artifacts
+        run: |
+          set -euo pipefail
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          DIGEST_DIR="${RUNNER_TEMP}/validated-digests"
+
+          shopt -s nullglob
+          DIGEST_FILES=("${DIGEST_DIR}"/*.txt)
+          shopt -u nullglob
+
+          if [[ ${#DIGEST_FILES[@]} -ne 2 ]]; then
+            echo "::error::Expected exactly 2 validated platform digests, found ${#DIGEST_FILES[@]}"
+            exit 1
+          fi
+
+          for file in "${DIGEST_FILES[@]}"; do
+            DIGEST=$(tr -d '[:space:]' < "$file")
+            if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Invalid digest content in ${file}: '${DIGEST}'"
+              exit 1
+            fi
+            echo "Verified passed digest (${file}): ${DIGEST}"
+          done
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # ratchet:docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release tags and OCI annotations
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # ratchet:docker/metadata-action@v6
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=auto
+          tags: |
+            type=edge,branch=main
+            type=raw,value=sha-${{ github.sha }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+          annotations: |
+            org.opencontainers.image.title=${{ github.event.repository.name }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Create and push multi-architecture index
+        run: |
+          set -euo pipefail
+          DIGEST_DIR="${RUNNER_TEMP}/validated-digests"
+
+          TAG_ARGS=()
+          while IFS= read -r tag; do
+            if [[ -n "$tag" ]]; then
+              TAG_ARGS+=("-t" "$tag")
+            fi
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+          if [[ ${#TAG_ARGS[@]} -eq 0 ]]; then
+            echo "::error::No release tags generated."
+            exit 1
+          fi
+
+          ANNOTATION_ARGS=()
+          while IFS= read -r annotation; do
+            if [[ -n "$annotation" ]]; then
+              ANNOTATION_ARGS+=("--annotation" "$annotation")
+            fi
+          done <<< "${{ steps.meta.outputs.annotations }}"
+
+          SOURCE_ARGS=()
+          shopt -s nullglob
+          for file in "${DIGEST_DIR}"/*.txt; do
+            DIGEST=$(tr -d '[:space:]' < "$file")
+            SOURCE_ARGS+=("${REGISTRY}/${IMAGE_NAME}@${DIGEST}")
+          done
+          shopt -u nullglob
+
+          echo "Publishing multi-arch manifest with tags:"
+          printf '  %s\n' "${TAG_ARGS[@]}"
+
+          docker buildx imagetools create "${TAG_ARGS[@]}" "${ANNOTATION_ARGS[@]}" "${SOURCE_ARGS[@]}"
+
+      - name: Verify published manifest platforms & attestations
+        run: |-
+          set -euo pipefail
+          PRIMARY_TAG=$(head -n 1 <<< "${{ steps.meta.outputs.tags }}")
+          echo "Inspecting manifest for primary tag: ${PRIMARY_TAG}"
+
+          # 1. Platform architecture presence check
+          RAW_MANIFEST=$(docker buildx imagetools inspect --raw "${PRIMARY_TAG}")
+          echo "${RAW_MANIFEST}" | jq .
+
+          PLATFORMS=$(jq -c '
+            if .manifests then
+              [
+                .manifests[]
+                | select(
+                    .platform != null
+                    and .platform.os != "unknown"
+                    and .platform.architecture != "unknown"
+                  )
+                | "\(.platform.os)/\(.platform.architecture)"
+              ]
+              | sort
+              | unique
+            else
+              []
+            end
+          ' <<< "${RAW_MANIFEST}")
+
+          echo "Detected executable platforms: $(echo "${PLATFORMS}" | jq -c .)"
+
+          HAS_AMD64=$(echo "${PLATFORMS}" | jq 'contains(["linux/amd64"])')
+          HAS_ARM64=$(echo "${PLATFORMS}" | jq 'contains(["linux/arm64"])')
+
+          if [[ "$HAS_AMD64" != "true" || "$HAS_ARM64" != "true" ]]; then
+            echo "::error::Published multi-arch index missing required platforms. Expected linux/amd64 and linux/arm64."
+            exit 1
+          fi
+
+          # 2. SBOM attestation presence check
+          SBOM_INFO=$(docker buildx imagetools inspect --format '{{json .SBOM}}' "${PRIMARY_TAG}")
+          echo "SBOM Attestations: ${SBOM_INFO}"
+          HAS_AMD64_SBOM=$(echo "${SBOM_INFO}" | jq 'has("linux/amd64")')
+          HAS_ARM64_SBOM=$(echo "${SBOM_INFO}" | jq 'has("linux/arm64")')
+
+          if [[ "$HAS_AMD64_SBOM" != "true" || "$HAS_ARM64_SBOM" != "true" ]]; then
+            echo "::error::Published index missing SBOM attestations for linux/amd64 and linux/arm64."
+            exit 1
+          fi
+
+          # 3. Provenance attestation presence check
+          PROV_INFO=$(docker buildx imagetools inspect --format '{{json .Provenance}}' "${PRIMARY_TAG}")
+          echo "Provenance Attestations: ${PROV_INFO}"
+          HAS_AMD64_PROV=$(echo "${PROV_INFO}" | jq 'has("linux/amd64")')
+          HAS_ARM64_PROV=$(echo "${PROV_INFO}" | jq 'has("linux/arm64")')
+
+          if [[ "$HAS_AMD64_PROV" != "true" || "$HAS_ARM64_PROV" != "true" ]]; then
+            echo "::error::Published index missing Provenance attestations for linux/amd64 and linux/arm64."
+            exit 1
+          fi
+
+          echo "Verification passed: Platforms, SBOM, and Provenance validated for both architectures."

@@ -1,0 +1,17 @@
+{
+  "separate-pull-requests": false,
+  "group-pull-request-title-pattern": "chore${scope}: release${component} ${version}",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "component": "app",
+      "include-component-in-tag": false
+    },
+    "backend/core": {
+      "release-type": "go",
+      "component": "backend/core",
+      "include-component-in-tag": true,
+      "tag-separator": "/"
+    }
+  }
+}

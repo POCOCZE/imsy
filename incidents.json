@@ -1,7 +1,7 @@
 {
   "incidents": [
     {
-      "id": "INC-101",
+      "name": "INC-101",
       "title": "Load balancer certificate expiration in 7 days",
       "severity": "high",
       "service_name": "ingress-controller",
@@ -9,7 +9,7 @@
       "resolved_at": "2026-03-20T11:42:00Z"
     },
     {
-      "id": "INC-102",
+      "name": "INC-102",
       "title": "Message queue consumer lag exceeding threshold",
       "severity": "critical",
       "service_name": "event-processor",
@@ -17,7 +17,7 @@
       "resolved_at": "2026-03-19T16:55:00Z"
     },
     {
-      "id": "INC-103",
+      "name": "INC-103",
       "title": "Storage quota exceeded on shared NFS mount",
       "severity": "high",
       "service_name": "file-storage",
@@ -25,7 +25,7 @@
       "resolved_at": "2026-03-18T15:10:00Z"
     },
     {
-      "id": "INC-104",
+      "name": "INC-104",
       "title": "SSL/TLS handshake failures on API endpoint",
       "severity": "critical",
       "service_name": "api-server",
@@ -33,7 +33,7 @@
       "resolved_at": "2026-03-17T10:30:00Z"
     },
     {
-      "id": "INC-105",
+      "name": "INC-105",
       "title": "Memory leak in search indexing service",
       "severity": "medium",
       "service_name": "elasticsearch-client",
@@ -41,7 +41,7 @@
       "resolved_at": null
     },
     {
-      "id": "INC-106",
+      "name": "INC-106",
       "title": "DNS resolution timeout for external dependencies",
       "severity": "high",
       "service_name": "service-mesh",
@@ -49,7 +49,7 @@
       "resolved_at": "2026-03-15T15:50:00Z"
     },
     {
-      "id": "INC-107",
+      "name": "INC-107",
       "title": "Database replication lag detected",
       "severity": "medium",
       "service_name": "mysql-replica",
@@ -57,7 +57,7 @@
       "resolved_at": "2026-03-14T12:45:00Z"
     },
     {
-      "id": "INC-108",
+      "name": "INC-108",
       "title": "Pod eviction due to resource requests misconfiguration",
       "severity": "low",
       "service_name": "web-frontend",
@@ -65,7 +65,7 @@
       "resolved_at": "2026-03-13T09:20:00Z"
     },
     {
-      "id": "INC-109",
+      "name": "INC-109",
       "title": "Persistent connection pool saturation in gateway",
       "severity": "critical",
       "service_name": "proxy-service",

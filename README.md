@@ -1,229 +1,113 @@
-# Incident Log Analyzer
+# Self-hosted, open-source incident management. Encrypted by default
 
-## What it does
+## What is IMSy?
 
-- Reads a JSON file of incidents
-- Parses incidents into Go structs
-- Calculates MTTR (mean time to recovery)
-- Finds unresolved incidents
-- Groups incidents by severity and by service
-- Outputs a structured JSON report to stdout or a file (-output flag)
+![incident-list](images/list.png)
 
-## Go concepts learned and used
+IMSy is a self-hostable, open-source incident management system. Add, edit and remove incidents, generate reports and browse everything in a sortable, filterable table.
 
-1. Variables, types
-2. Slices, Maps and Structs
-3. Functions with multiple return values, including errors
-4. `flag` package for CLI arguments
-5. `encoding/json` — Marshal and Unmarshal
-6. `os.ReadFile` / `os.WriteFile`
-7. `time.Parse` and `time.Duration`
-8. `fmt.Println`, `fmt.Sprintf`, `log` package
-9. `go test` — writing your first test
+## Table of contents
 
-**This project does not use those concepts:** interfaces, goroutines, channels, HTTP or external dependencies.
+- [Self-hosted, open-source incident management. Encrypted by default](#self-hosted-open-source-incident-management-encrypted-by-default)
+  - [What is IMSy?](#what-is-imsy)
+  - [Table of contents](#table-of-contents)
+  - [Features](#features)
+  - [Prerequisites](#prerequisites)
+  - [Try it in 90 seconds](#try-it-in-90-seconds)
+    - [Import sample data (optional)](#import-sample-data-optional)
+  - [Running with Postgres (persistent)](#running-with-postgres-persistent)
+  - [Why is the image so small?](#why-is-the-image-so-small)
+  - [REST API endpoints reference](#rest-api-endpoints-reference)
+  - [Roadmap](#roadmap)
+  - [Screenshots](#screenshots)
+  - [Issues \& Contributing](#issues--contributing)
 
-## Available parameters
+## Features
 
-![go-help](images/go-help.png)
+- Add, edit and remove incidents
+- Sort, filter or search table of incidents
+- Export reports
+- Import, export your incidents
+- Encrypted at rest by default
+- Ships as a single binary - container image under 40 MB
 
-## Running with `go run`
+## Prerequisites
 
-To run Go code by compiling it and immidiately running it:
+- Docker and Docker Compose (or alternatives like Podman)
 
-```bash
-# incidents.json file is used as an example
-go run main.go -file incidents.json
+## Try it in 90 seconds
 
-# Output to file is optional as stdout is default method that can be further parsed with JQ
-go run main.go -file incidents.json -output my-output.json
-```
-
-## Compiling Go code
-
-To compile Go code you can use this command:
+Runs entirely in memory. No database or configuration needed.
 
 ```bash
-go build main.go
+# create 'imsy' directory and download Docker Compose file into it.
+mkdir imsy; cd imsy
+curl -O https://raw.githubusercontent.com/POCOCZE/imsy/refs/heads/main/docker-compose.yml
+docker compose up -d
 ```
 
-Compilation is very quick, and file is by default called just `main`.
+In your browser access [localhost:8080](http://localhost:8080)
 
-### Running compiled Go code
+### Import sample data (optional)
 
-To run compiled Go code simply write the name of the program - by default it's `main`:
+1. Download **incidents.json** file from the root of the repository
+2. Navigate to the very left and *click plus icon*
+3. Import the file you downloaded and click *Submit* button
+4. Navigate to the very left again and *click list icon*
+5. You should see the imported incidents, which you can filter or sort as you want
+
+## Running with Postgres (persistent)
 
 ```bash
-main -file incidents.json
+# clone repository
+git clone https://github.com/POCOCZE/imsy.git
+cd imsy
+# copy 'compose.env.example' environment file with a different name '.env'
+cp compose.env.example .env
+# edit environment file to you liking
+nano .env
+# run the containers
+docker compose -f docker-compose-full.yml up -d
 ```
 
-However if program is located somewhere else:
+After that you should be able to access the app UI using: [localhost:8080](localhost:8080)
 
-```bash
-/path/to/main -file incidents.json
+## Why is the image so small?
 
-# or
-./another/path/to/main -file incidents.json
-```
+The backend compiles to a single static Go binary with no external
+runtime dependencies. The frontend ships as static assets embedded in
+that same binary - so the whole thing runs as one process, one image,
+under 40 MB.
 
-## Go test
+## REST API endpoints reference
 
-Tested one function `CalcMTTRAvg()`:
+| HTTP method | Endpoint name | Handler name | Note |
+| ----------- | ------------- | ------------ | ---- |
+| GET | `/api/healthz` | healthHandler | Backend status health |
+| GET | `/api/report` | getReportHandler | Return incident report |
+| GET | `/api/incidents` | getAllHandler | Return list of incidents |
+| POST | `/api/incidents` | addListHandler | Retrives list of incidents |
+| POST | `/api/incident` | addHandler | Retrives one incident |
+| GET | `/api/incidents/{id}` | getByIDHandler | Return one incident by ID |
+| DELETE | `/api/incidents/{id}` | deleteByIDHandler | Delete one incident by ID |
 
-![go-test-result](images/go-test.png)
+## Roadmap
 
-## Output example
+- ✓ Multi-stage Dockerfile
+- ✓ Add `docker-compose.yml`
+- ✓ Tutorial how to run this tool
+- ✓ Create OCI rootless images
+- ✓ Gracefully shutdown on SIGTEM
+- Switch from log.Printf to *slog*
+- Create dedicated page for each incident when clicking on it
+- Create Helm Chart for Kubernetes
 
-Here is example output that you can expect by running the Go program againgst example `incidents.json` file:
+## Screenshots
 
-```json
-{
-  "incidents_count": 9,
-  "unresolved_ids": [
-    "INC-105",
-    "INC-109"
-  ],
-  "mttr": "1h18m51s",
-  "by_services": {
-    "api-server": {
-      "INC-104": {
-        "title": "SSL/TLS handshake failures on API endpoint",
-        "severity": "critical",
-        "message": "Resolved in 45m0s (Ended: 2026-03-17T10:30:00Z)",
-        "is_resolved": true
-      }
-    },
-    "elasticsearch-client": {
-      "INC-105": {
-        "title": "Memory leak in search indexing service",
-        "severity": "medium",
-        "message": "Pending (Started: 2026-03-16T21:00:00Z)",
-        "is_resolved": false
-      }
-    },
-    "event-processor": {
-      "INC-102": {
-        "title": "Message queue consumer lag exceeding threshold",
-        "severity": "critical",
-        "message": "Resolved in 1h25m0s (Ended: 2026-03-19T16:55:00Z)",
-        "is_resolved": true
-      }
-    },
-    "file-storage": {
-      "INC-103": {
-        "title": "Storage quota exceeded on shared NFS mount",
-        "severity": "high",
-        "message": "Resolved in 1h50m0s (Ended: 2026-03-18T15:10:00Z)",
-        "is_resolved": true
-      }
-    },
-    "ingress-controller": {
-      "INC-101": {
-        "title": "Load balancer certificate expiration in 7 days",
-        "severity": "high",
-        "message": "Resolved in 1h27m0s (Ended: 2026-03-20T11:42:00Z)",
-        "is_resolved": true
-      }
-    },
-    "mysql-replica": {
-      "INC-107": {
-        "title": "Database replication lag detected",
-        "severity": "medium",
-        "message": "Resolved in 1h15m0s (Ended: 2026-03-14T12:45:00Z)",
-        "is_resolved": true
-      }
-    },
-    "proxy-service": {
-      "INC-109": {
-        "title": "Persistent connection pool saturation in gateway",
-        "severity": "critical",
-        "message": "Pending (Started: 2026-03-12T16:40:00Z)",
-        "is_resolved": false
-      }
-    },
-    "service-mesh": {
-      "INC-106": {
-        "title": "DNS resolution timeout for external dependencies",
-        "severity": "high",
-        "message": "Resolved in 1h25m0s (Ended: 2026-03-15T15:50:00Z)",
-        "is_resolved": true
-      }
-    },
-    "web-frontend": {
-      "INC-108": {
-        "title": "Pod eviction due to resource requests misconfiguration",
-        "severity": "low",
-        "message": "Resolved in 1h5m0s (Ended: 2026-03-13T09:20:00Z)",
-        "is_resolved": true
-      }
-    }
-  },
-  "by_severity": {
-    "critical": {
-      "INC-102": {
-        "title": "Message queue consumer lag exceeding threshold",
-        "service": "event-processor",
-        "message": "Resolved in 1h25m0s (Ended: 2026-03-19T16:55:00Z)",
-        "is_resolved": true
-      },
-      "INC-104": {
-        "title": "SSL/TLS handshake failures on API endpoint",
-        "service": "api-server",
-        "message": "Resolved in 45m0s (Ended: 2026-03-17T10:30:00Z)",
-        "is_resolved": true
-      },
-      "INC-109": {
-        "title": "Persistent connection pool saturation in gateway",
-        "service": "proxy-service",
-        "message": "Pending (Started: 2026-03-12T16:40:00Z)",
-        "is_resolved": false
-      }
-    },
-    "high": {
-      "INC-101": {
-        "title": "Load balancer certificate expiration in 7 days",
-        "service": "ingress-controller",
-        "message": "Resolved in 1h27m0s (Ended: 2026-03-20T11:42:00Z)",
-        "is_resolved": true
-      },
-      "INC-103": {
-        "title": "Storage quota exceeded on shared NFS mount",
-        "service": "file-storage",
-        "message": "Resolved in 1h50m0s (Ended: 2026-03-18T15:10:00Z)",
-        "is_resolved": true
-      },
-      "INC-106": {
-        "title": "DNS resolution timeout for external dependencies",
-        "service": "service-mesh",
-        "message": "Resolved in 1h25m0s (Ended: 2026-03-15T15:50:00Z)",
-        "is_resolved": true
-      }
-    },
-    "low": {
-      "INC-108": {
-        "title": "Pod eviction due to resource requests misconfiguration",
-        "service": "web-frontend",
-        "message": "Resolved in 1h5m0s (Ended: 2026-03-13T09:20:00Z)",
-        "is_resolved": true
-      }
-    },
-    "medium": {
-      "INC-105": {
-        "title": "Memory leak in search indexing service",
-        "service": "elasticsearch-client",
-        "message": "Pending (Started: 2026-03-16T21:00:00Z)",
-        "is_resolved": false
-      },
-      "INC-107": {
-        "title": "Database replication lag detected",
-        "service": "mysql-replica",
-        "message": "Resolved in 1h15m0s (Ended: 2026-03-14T12:45:00Z)",
-        "is_resolved": true
-      }
-    }
-  }
-}
-```
+<img src="images/homepage.png" alt="homepage" width="400"/>
+<img src="images/add.png" alt="incident-add" width="400"/>
+<img src="images/report.png" alt="incident-report" width="400"/>
+<img src="images/settings.png" alt="settings" width="400"/>
 
 ## Issues & Contributing
 
