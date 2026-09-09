@@ -69,15 +69,15 @@ func (p *PostgresStore) EncryptIncidentCols(enc *core.EncIncidentCols) *core.Enc
 func (p *PostgresStore) DecIncidentCols(enc *core.EncIncidentCols) (*core.EncIncidentCols, error) {
 	var err error
 	if enc.Name, err = p.DecryptFromGCM(enc.Name); err != nil {
-		log.Printf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
+		p.Logger.Error("failed to decrypt encrypted string", "error", err, "func", "DecIncidentCols")
 		return nil, fmt.Errorf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
 	}
 	if enc.Title, err = p.DecryptFromGCM(enc.Title); err != nil {
-		log.Printf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
+		p.Logger.Error("failed to decrypt encrypted string", "error", err, "func", "DecIncidentCols")
 		return nil, fmt.Errorf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
 	}
 	if enc.ServiceName, err = p.DecryptFromGCM(enc.ServiceName); err != nil {
-		log.Printf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
+		p.Logger.Error("failed to decrypt encrypted string", "error", err, "func", "DecIncidentCols")
 		return nil, fmt.Errorf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
 	}
 	return enc, nil
