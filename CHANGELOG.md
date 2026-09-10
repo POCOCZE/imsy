@@ -6,6 +6,15 @@
 ### Bug Fixes
 
 * fixed typo, removed unnecessary env var ([e1b1c1b](https://github.com/POCOCZE/imsy/commit/e1b1c1b5189a70e5ffe73e852bbcea89d1e962c3))
+* update config to have separate pull requests ([8338a1b](https://github.com/POCOCZE/imsy/commit/8338a1bfb640d685681d51081f0e657d45b289c1))
+* update config to have separate pull requests ([01ae94d](https://github.com/POCOCZE/imsy/commit/01ae94de0d60bc60e7c9dfa6b8000a69407c2ac4))
+
+## [1.0.2](https://github.com/POCOCZE/imsy/compare/v1.0.1...v1.0.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* fixed typo, removed unnecessary env var ([e1b1c1b](https://github.com/POCOCZE/imsy/commit/e1b1c1b5189a70e5ffe73e852bbcea89d1e962c3))
 
 ## [1.0.1](https://github.com/POCOCZE/imsy/compare/v1.0.0...v1.0.1) (2026-09-09)
 
