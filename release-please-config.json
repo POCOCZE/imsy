@@ -1,6 +1,5 @@
 {
-  "separate-pull-requests": false,
-  "group-pull-request-title-pattern": "chore${scope}: release${component} ${version}",
+  "separate-pull-requests": true,
   "packages": {
     ".": {
       "release-type": "simple",
