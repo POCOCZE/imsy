@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/POCOCZE/imsy/compare/v1.0.1...v1.0.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* fixed typo, removed unnecessary env var ([e1b1c1b](https://github.com/POCOCZE/imsy/commit/e1b1c1b5189a70e5ffe73e852bbcea89d1e962c3))
+
 ## [1.0.1](https://github.com/POCOCZE/imsy/compare/v1.0.0...v1.0.1) (2026-09-09)
 
 
