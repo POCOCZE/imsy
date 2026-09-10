@@ -43,7 +43,8 @@ func NewPostgresStore(ctx context.Context, connString string, logger *slog.Logge
 	encryptionKeyB64 := os.Getenv(EnvEncryptionKey)
 	encryptionKey, err := base64.StdEncoding.DecodeString(encryptionKeyB64)
 	if err != nil {
-		log.Fatalf("failed to base64 decode string value with env var key %q", EnvTransportEncryptKey)
+		log.Fatalf("failed to base64 decode string value with env var key %q", EnvEncryptionKey)
+		// log.Fatalf("failed to base64 decode string value with env var key %q", EnvTransportEncryptKey)
 	}
 
 	// build the GCM
