@@ -41,6 +41,7 @@ func (p *PostgresStore) DecryptFromGCM(encryptedB64 string) (string, error) {
 	return string(plaintext), nil
 }
 
+// Using hashing because the encrypted output can be effortlessly sorted, compared to AES-GCM encryption
 func (p *PostgresStore) EncryptToHMAC(plaintext string, hmacKeyB64 string) string {
 	// decode the B64 hmacKey first
 	hmacKey, err := base64.StdEncoding.DecodeString(hmacKeyB64)
@@ -59,8 +60,8 @@ func (p *PostgresStore) EncryptToHMAC(plaintext string, hmacKeyB64 string) strin
 // encrypt important columns in one place
 func (p *PostgresStore) EncryptIncidentCols(enc *core.EncIncidentCols) *core.EncIncidentCols {
 	var encIncidentCols core.EncIncidentCols
-	encIncidentCols.Title = p.EncryptToGCM(enc.Title)
 	encIncidentCols.Name = p.EncryptToGCM(enc.Name)
+	encIncidentCols.Title = p.EncryptToGCM(enc.Title)
 	encIncidentCols.ServiceName = p.EncryptToGCM(enc.ServiceName)
 	return &encIncidentCols
 }

@@ -24,7 +24,7 @@ var (
     EnvIncHTTPPort = "INC_HTTP_PORT"
     EnvIncDevMode = "INC_DEV_MODE"
     EnvEncryptionKey = "ENCRYPTION_KEY"
-    EnvTransportEncryptKey = "TRANSPORT_ENCRYPTION_KEY"
+    // EnvTransportEncryptKey = "TRANSPORT_ENCRYPTION_KEY"
     EnvHMACEncryptKey = "HMAC_ENCRYPTION_KEY"
 )
 
@@ -109,10 +109,10 @@ func checkEnvironmentVariables(logger *slog.Logger) {
     // }
 
     // Check transport encrypt key
-    _, exist = os.LookupEnv(EnvTransportEncryptKey)
-    if !exist {
-        logger.Warn("transport encrypt key env var not found.", "flag", EnvTransportEncryptKey)
-    }
+    // _, exist = os.LookupEnv(EnvTransportEncryptKey)
+    // if !exist {
+    //     logger.Warn("transport encrypt key env var not found.", "flag", EnvTransportEncryptKey)
+    // }
     // } else {
     //     logger.Info("✓ found %q env var", EnvTransportEncryptKey)
     // }

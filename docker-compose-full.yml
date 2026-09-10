@@ -31,7 +31,7 @@ services:
       INC_DB_CONN: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable
       # Generated using: openssl rand -base64 32
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      TRANSPORT_ENCRYPTION_KEY: ${TRANSPORT_ENCRYPTION_KEY}
+      # TRANSPORT_ENCRYPTION_KEY: ${TRANSPORT_ENCRYPTION_KEY}
       HMAC_ENCRYPTION_KEY: ${HMAC_ENCRYPTION_KEY}
 
       # optional: specify UUIDv7, otherwise will be generated on each startup new unique one, example:
