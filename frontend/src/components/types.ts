@@ -3,7 +3,7 @@ export interface Incident {
     org_id?: string
     name?: string
     title: string
-    severity: Severity
+    severity: string
     service_name: string
     started_at: string
     resolved_at: string | null
@@ -59,4 +59,4 @@ export interface ActionColumn{
 }
 
 export type Column = DataColumn | ActionColumn
-export type Severity = 'critical' | 'high' | 'medium' | 'low'
+// export type Severity = 'critical' | 'high' | 'medium' | 'low'

@@ -147,10 +147,10 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
             patchIncidentBody.title = title
         }
 
-        if (severity === undefined) {
+        if (severity === "") {
             patchIncidentBody.severity = incident?.severity
         } else {
-            patchIncidentBody.severity = undefined
+            patchIncidentBody.severity = severity
         }
 
         if (serviceName === "") {
