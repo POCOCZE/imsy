@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.3](https://github.com/POCOCZE/imsy/compare/v1.0.2...v1.0.3) (2026-09-12)
+
+
+### Bug Fixes
+
+* added embed ui from core. updated func using it ([75f2618](https://github.com/POCOCZE/imsy/commit/75f2618898e0d21b7ef3b36bb71a1ce134ba3e30))
+* added missing return statement ([674abc4](https://github.com/POCOCZE/imsy/commit/674abc418152d97d306fc67ab31e418455c6a96b))
+* added missing return statement ([3ece390](https://github.com/POCOCZE/imsy/commit/3ece3903c7ae744408b9475db56317c1cd08a7f7))
+* removed embed ui, now in self-hosted dir ([314e579](https://github.com/POCOCZE/imsy/commit/314e579e4e62b4ebb8286a7ff3268ad51f39c0cd))
+
 ## [1.0.2](https://github.com/POCOCZE/imsy/compare/v1.0.1...v1.0.2) (2026-09-10)
 
 
