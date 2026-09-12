@@ -2,9 +2,11 @@ package core
 
 import (
 	"encoding/json"
+	"io/fs"
 	"log"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 // Health status endpoint
@@ -17,31 +19,28 @@ func HealthHandler(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-// Set handlers, middlewares and start the HTTP server on particular port.
-func StartServer(port string, store IncidentStorage, logger *slog.Logger) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/healthz", HealthHandler(logger))
-	mux.HandleFunc("GET /api/report", GetReportHandler(store, logger))
-	mux.HandleFunc("GET /api/incidents", GetAllHandler(store))
-	mux.HandleFunc("POST /api/incidents", AddListHandler(store, logger))
-	mux.HandleFunc("POST /api/incident", AddHandler(store, logger))
-	mux.HandleFunc("PATCH /api/incident/{id}", EditHandler(store, logger))
-	mux.HandleFunc("GET /api/incident/{id}", GetByIDHandler(store, logger))
-	mux.HandleFunc("DELETE /api/incident/{id}", DeleteByIDHandler(store, logger))
+func FrontendHandler(mux *http.ServeMux, distFS fs.FS) error {
+	// create Go file server and wrap it around SPA logic
+	fileServer :=  http.FileServer(http.FS(distFS))
+	mux.Handle("/", SPAHandler(distFS, fileServer))
+	return nil
+}
 
-	// !This removes all incidents forever! For testing.
-	mux.HandleFunc("DELETE /api/delete-all-incidents-forever", DeleteAllHandler(store, logger))
+// implements the "fallback to index.html" rule so frontend can load successfully
+func SPAHandler(staticFS fs.FS, fileServer http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/")
+		if path == "" {
+			path = "index.html"
+		}
 
-	// empty function during development. During compilation the parameter -production is used to 
-	if err := FrontendHandler(mux); err != nil {
-		log.Fatalf("[StartServer] failed to serve frontend: %s", err)
-	}
+		// try to find the file browser asked for
+		if _, err := staticFS.Open(path); err != nil {
+			r.URL.Path = "/"
+		}
 
-	// handler := CorsMiddleware(mux)
-	logger.Info("server listening", "port", port)
-	err := http.ListenAndServe(":"+port, mux)
-	if err != nil {
-		log.Fatalf("error starting HTTP server: %s", err)
+		// serve the file
+		fileServer.ServeHTTP(w, r)
 	}
 }
 
