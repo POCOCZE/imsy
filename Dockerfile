@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 COPY ./backend .
 
-COPY --from=frontend-builder /app/frontend/dist ./core/ui/dist
+COPY --from=frontend-builder /app/frontend/dist ./self-hosted/ui/dist
 
 WORKDIR /app/backend/self-hosted
 RUN --mount=type=cache,target=/go/pkg/mod \
