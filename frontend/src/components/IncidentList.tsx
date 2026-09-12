@@ -4,7 +4,7 @@ import { IncidentReportSidebar } from './IncidentReport'
 import { Link, useFetcher, useRouteLoaderData, useSearchParams } from 'react-router'
 import type { GetIncidentsLoaderData } from '../functions/getIncidents.loader'
 import { toast } from 'react-toastify'
-import type { Column, Severity } from './types'
+import type { Column } from './types'
 
 export const IncidentList = () => {
     const data = useRouteLoaderData("get-incidents") as GetIncidentsLoaderData
@@ -51,7 +51,7 @@ export const IncidentList = () => {
         low: 'Low',
     }
 
-    const severityOrder: Record<Severity, number> = {
+    const severityOrder: Record<string, number> = {
         critical: 0,
         high: 1,
         medium: 2,
