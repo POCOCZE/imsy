@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.3](https://github.com/POCOCZE/imsy/compare/v1.0.2...v1.0.3) (2026-09-12)
+
+
+### Bug Fixes
+
+* added dummy option for edit modal ([9d6362a](https://github.com/POCOCZE/imsy/commit/9d6362a194c263a36671afeb64c070f1228c0e53))
+* added dummy option for edit modal ([9d31ed8](https://github.com/POCOCZE/imsy/commit/9d31ed825326496dd4ecf246058af10484f45d8c))
+* added embed ui from core. updated func using it ([75f2618](https://github.com/POCOCZE/imsy/commit/75f2618898e0d21b7ef3b36bb71a1ce134ba3e30))
+* added missing return statement ([674abc4](https://github.com/POCOCZE/imsy/commit/674abc418152d97d306fc67ab31e418455c6a96b))
+* added missing return statement ([3ece390](https://github.com/POCOCZE/imsy/commit/3ece3903c7ae744408b9475db56317c1cd08a7f7))
+* fixed empty severity when editing incident ([408407c](https://github.com/POCOCZE/imsy/commit/408407ce9df89d3458a9e04bdc619a37ee4668c7))
+* fixed empty severity when editing incident ([77c3d9d](https://github.com/POCOCZE/imsy/commit/77c3d9df8d980d84a81190eb0204b9a648fab4fa))
+* removed embed ui, now in self-hosted dir ([314e579](https://github.com/POCOCZE/imsy/commit/314e579e4e62b4ebb8286a7ff3268ad51f39c0cd))
+
 ## [1.0.2](https://github.com/POCOCZE/imsy/compare/v1.0.1...v1.0.2) (2026-09-10)
 
 
