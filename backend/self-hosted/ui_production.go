@@ -24,4 +24,5 @@ func registerFrontend(mux *http.ServeMux) error {
 	if err := core.FrontendHandler(mux, distFS); err != nil {
 		return fmt.Errorf("[registerFrontend] failed to register frontend handler: %s", err)
 	}
+	return nil
 }
