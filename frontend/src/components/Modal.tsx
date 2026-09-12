@@ -270,7 +270,8 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
 
                         <label className="label">Severity</label>
                         <label className="select mb-4 lg:min-w-[20vw]">
-                            <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+                            <select onChange={(e) => setSeverity(e.target.value)}>
+                                <option value=''>-Select-</option>
                                 <option value='critical'>Critical</option>
                                 <option value='high'>High</option>
                                 <option value='medium'>Medium</option>
