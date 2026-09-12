@@ -188,5 +188,5 @@ func main() {
     if httpPort == "" {
         httpPort = "8080"
     }
-    core.StartServer(httpPort, store, logger)
+    StartServer(httpPort, store, logger)
 }

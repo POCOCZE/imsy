@@ -22,7 +22,7 @@ func RunDBMigration(ctx context.Context, logger *slog.Logger) (err error) {
 		return fmt.Errorf("[RunDBMigration] Postgres connection string is required to run database migrations. Mandatory env. var. %q", EnvIncPgConn)
 	}
 	logger.Info("Found pg conn string. Starting database migrations", "func", "RunDBMigration")
-	
+
 	// Open database and open migration files
 	pgConn := os.Getenv(EnvIncPgConn)
 	db, err := sql.Open("pgx", pgConn)
