@@ -1,10 +1,10 @@
 //go:build !production
 
-package core
+package main
 
 import "net/http"
 
-func FrontendHandler(mux *http.ServeMux) error {
+func registerFrontend(mux *http.ServeMux) error {
 	// nothing
 	return nil
 }
