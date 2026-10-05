@@ -55,10 +55,9 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
 
     const modalRef = useRef<HTMLDialogElement>(null)
     const fetcher = useFetcher<GetIncidentLoaderData>()
-    const incident = fetcher.data?.incident
-
     // error is handled by the loader, prints error toast, but for checks lets have it right here
     // const error = fetcher.data?.error
+    const incident = fetcher.data?.incident
 
     const fetchIncidentByID = () => {
         fetcher.load(`/api/incident/${incidentID}`)
@@ -72,71 +71,6 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
     const [submitBtnBg, setSubmitBtnBg] = useState<string>('btn-neutral')
 
     const [enableResolvedAtOption, setEnableResolvedAtOption] = useState<boolean>(false)
-
-    // useEffect(() => {
-    //     // setTitle(incident?.title)
-    //     if (incident?.severity) setSeverity(incident?.severity)
-    //     // setServiceName(incident?.service_name)
-    //     // if (incident?.resolved_at) setResolvedAt(incident?.resolved_at)
-    // }, [])
-
-    // // Todo: switch to fetcher and useFetcher
-    // const fetchIncidentByID = async () => {
-    //     try {
-    //         const response = await fetch(`/api/incident/${incidentID}`, {
-    //             method: "GET",
-    //             credentials: "include",
-    //         })
-    //         if (!response?.ok) {
-    //             const errorData = await response?.json()
-    //             console.log('Error response', errorData)
-    //             throw new Error(`- ${errorData.error}`)
-    //         }
-    //         const data: Incident = await response.json()
-
-    //         setID(data.id)
-    //         setOrgID(data.org_id)
-    //         setName(data.name)
-    //         setTitle(data.title)
-    //         setSeverity(data.severity)
-    //         setServiceName(data.service_name)
-    //         setStartedAt(data.started_at)
-    //         setCreatedBy(data.created_by)
-    //         setCreatedAt(data.created_at)
-    //         if (data.resolved_at === null) {
-    //             setResolvedAt('')
-    //             setIsResolved(false)
-    //         } else {
-    //             setResolvedAt(data.resolved_at)
-    //             setOriginalResolvedAt(data.resolved_at)
-    //         }
-    //     } catch (err) {
-    //         toast.error(err instanceof Error ? err.message : 'Unknown error')
-    //     }
-    // }
-
-    // const RenderLoading = () => {
-    //     if (loading) {
-    //         return (
-    //             <div className="flex w-4 justify-center items-center flex-col gap-4">
-    //                 <div className="skeleton h-4 w-full"></div>
-    //             </div>
-    //         )   
-    //     }
-    // }
-
-    // const timeStringToUTC = async (time: string | undefined):Promise<string> => {
-    //     try {
-    //         if (time === undefined) {
-    //             throw new Error("time variable is undefined.")
-    //         }
-    //         const userDate = new Date(time)
-    //         return userDate.toISOString()
-    //     } catch (err) {
-    //         toast.error(err instanceof Error ? err.message : 'Unknown error occured')
-    //         return ''
-    //     }
-    // }
 
     const patchIncidentBody: Partial<Incident> = {}
 
@@ -170,31 +104,6 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         }
 
         HandleEdit(incEditFetcher, patchIncidentBody, incidentID)
-
-        // try {
-        //     const response = await fetch(`/api/incident/${incidentID}`, {
-        //         method: 'PATCH',
-        //         headers: {'Content-Type': 'application/json'},
-        //         credentials: "include",
-        //         body: JSON.stringify(patchIncidentBody)
-        //         // body: JSON.stringify({
-        //         //     name: incident?.name,
-        //         //     title: title,
-        //         //     severity: severity,
-        //         //     service_name: serviceName,
-        //         //     started_at: incident?.started_at,
-        //         //     resolved_at: await timeStringToUTC(resolvedAt)
-        //         // })
-        //     })
-        //     const data = await response?.json()
-        //     if (!response?.ok) {
-        //         throw new Error(data.message)
-        //     } else {
-        //         toast.success(data.message)
-        //     }
-        // } catch (err) {
-        //     toast.error(err instanceof Error ? err.message : 'Unknown error')
-        // }
     }
 
     const RenderResolvedAtField = () => {
