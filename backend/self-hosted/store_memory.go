@@ -46,7 +46,8 @@ func (m *MemoryStore) Add(ctx context.Context, incident *core.Incident) (int, uu
 		// ? I will keep it as it as, since Go is very fast.
 		if storedInc.Name == incident.Name {
 			duplicateIncCount = 1
-			// return fmt.Errorf("error: incident already exist")
+			// quit immidiately when there is a duplicate incident
+			return duplicateIncCount, uuid.Nil, nil
 		}
 	}
 
