@@ -3,6 +3,8 @@ services:
     image: ghcr.io/pococze/imsy:latest
     environment:
       # All data are temporarilly stored in memory, if true
+      - LOG_LEVEL="info"
+      - LOG_FORMAT="jsonl"
       - INC_DEV_MODE=true
     restart: unless-stopped
     ports:

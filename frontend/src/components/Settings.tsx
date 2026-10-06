@@ -88,7 +88,11 @@ export const Settings = () => {
             </div>
             <div className="flex">
                 <span className="label mr-1">Built by</span>
-                <span className="font-semibold">PradkaDotDev</span>
+                <span className="font-semibold">Simon Pradka</span>
+            </div>
+            <div className="flex">
+                <span className="label mr-1">More on</span>
+                <a href="https://pradka.dev" className="font-semibold">pradka.dev</a>
             </div>
         </div>
     )
