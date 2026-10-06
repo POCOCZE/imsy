@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,6 +19,8 @@ var incUserID uuid.UUID
 var isDevModeOn bool
 
 var (
+    EnvLogLevel = "LOG_LEVEL"
+    EnvLogFormat = "LOG_FORMAT"
     EnvIncOrgID = "INC_ORG_ID"
     EnvIncUserID = "INC_USER_ID"
     EnvIncPgConn = "INC_DB_CONN"
@@ -28,9 +31,13 @@ var (
     EnvHMACEncryptKey = "HMAC_ENCRYPTION_KEY"
 )
 
+var ValidLogLevels []string = []string{"info", "warn", "error", "debug"}
+var ValidLogFormats []string = []string{"jsonl", "text"}
+
 // Setting environemnt variables is optional, but recommended because every app startup generates new UUIDs when env. vars not specified. When no env vars in UUIDv7 format is provided, it will be generated. Generated UUIDs are printed.
 func checkEnvironmentVariables(logger *slog.Logger) {
     var err error
+
     // Check OrgID
     incOrgIDStr, orgExist := os.LookupEnv(EnvIncOrgID)
     if !orgExist {
@@ -128,18 +135,82 @@ func checkEnvironmentVariables(logger *slog.Logger) {
     logger.Info("✓ environment variable check executed successfully")
 }
 
+// Checks for log level and log format provided by the user.
+func checkLogLevelAndFormat() *slog.Logger {
+    // Check log format
+    logFormat, exist := os.LookupEnv(EnvLogFormat)
+    if !exist {
+        log.Fatalf("log format var not found (%s). options: 'jsonl', 'text'.", EnvLogFormat)
+    } else if !slices.Contains(ValidLogFormats, logFormat) {
+        log.Fatalf("log format not valid. options: 'jsonl', 'text'.")
+    }
+
+    // Check log level
+    logLevel, exist := os.LookupEnv(EnvLogLevel)
+    if !exist {
+        log.Fatalf("log level var not found (%s). options: 'info', 'warn', 'error', 'debug'.", EnvLogLevel)
+    } else if !slices.Contains(ValidLogLevels, logLevel) {
+        log.Fatalf("log level not valid. options: 'info', 'warn', 'error', 'debug'.")
+    }
+
+    var logger *slog.Logger
+
+    switch strings.ToLower(logFormat) {
+    case "jsonl":
+        switch strings.ToLower(logLevel) {
+        case "info":
+            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelInfo,
+            }))
+        case "warn":
+            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelWarn,
+            }))
+        case "error":
+            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelError,
+            }))
+        case "debug":
+            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelDebug,
+            }))
+        }
+    case "text":
+        switch strings.ToLower(logLevel) {
+        case "info":
+            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelInfo,
+            }))
+        case "warn":
+            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelWarn,
+            }))
+        case "error":
+            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelError,
+            }))
+        case "debug":
+            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+                Level: slog.LevelDebug,
+            }))
+        }
+    }
+
+    return logger
+}
+
 func main() {
     // logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
     // logger := slog.Default()
+    // logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+    //     Level: slog.LevelDebug,
+    // }))
 
-    // Todo: add env. var for severity level
-    logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-        Level: slog.LevelDebug,
-    }))
+    logger := checkLogLevelAndFormat()
     slog.SetDefault(logger)
 
 	logger.Info("+-----------------------+")
-	logger.Info("| Built by PradkaDotDev |")
+	logger.Info("| Built by Simon Pradka |")
 	logger.Info("+-----------------------+")
 	logger.Info("|  More on: pradka.dev  |")
 	logger.Info("+-----------------------+")
