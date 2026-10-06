@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.4](https://github.com/POCOCZE/imsy/compare/v1.0.3...v1.0.4) (2026-10-06)
+
+
+### Bug Fixes
+
+* return quickly when trying to add duplicate incident ([e36939a](https://github.com/POCOCZE/imsy/commit/e36939ab8416110288106dc199756f56c384fb70))
+* return quickly when trying to add duplicate incident ([fe45edd](https://github.com/POCOCZE/imsy/commit/fe45edd0b685ae6019886ffc31f135445f69a760))
+
 ## [1.0.3](https://github.com/POCOCZE/imsy/compare/v1.0.2...v1.0.3) (2026-10-05)
 
 
