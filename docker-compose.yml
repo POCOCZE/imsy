@@ -2,10 +2,10 @@ services:
   imsy:
     image: ghcr.io/pococze/imsy:latest
     environment:
+      LOG_LEVEL: "info"
+      LOG_FORMAT: "jsonl"
       # All data are temporarilly stored in memory, if true
-      - LOG_LEVEL="info"
-      - LOG_FORMAT="jsonl"
-      - INC_DEV_MODE=true
+      INC_DEV_MODE: true
     restart: unless-stopped
     ports:
       - 8080:8080
