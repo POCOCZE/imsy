@@ -2,7 +2,9 @@ services:
   imsy:
     image: ghcr.io/pococze/imsy:latest
     environment:
+      # Choose from: info, warn, error, debug
       LOG_LEVEL: "info"
+      # Choose from: jsonl, text
       LOG_FORMAT: "jsonl"
       # All data are temporarilly stored in memory, if true
       INC_DEV_MODE: true
