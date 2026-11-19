@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/POCOCZE/imsy/compare/v1.0.5...v1.1.0) (2026-11-19)
+
+
+### Features
+
+* :sparkles: Implemented slog JSON logging ([b48242f](https://github.com/POCOCZE/imsy/commit/b48242f26b5679b7a7fc287d682dcb869e465cef))
+* :sparkles: Implemented slog JSON logging ([c398906](https://github.com/POCOCZE/imsy/commit/c39890624bc85d92e8cf0590425b93ba9a25b96b))
+
+
+### Bug Fixes
+
+* :bug: Decatalized return error string ([85ad82e](https://github.com/POCOCZE/imsy/commit/85ad82e5b2679bab1d3701f703ef9d30fb2f9451))
+
 ## [1.0.5](https://github.com/POCOCZE/imsy/compare/v1.0.4...v1.0.5) (2026-10-07)
 
 
