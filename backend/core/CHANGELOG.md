@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/POCOCZE/imsy/compare/backend/core/v1.0.2...backend/core/v1.1.0) (2026-11-19)
+
+
+### Features
+
+* :sparkles: Implemented slog JSON logging ([c398906](https://github.com/POCOCZE/imsy/commit/c39890624bc85d92e8cf0590425b93ba9a25b96b))
+
+
+### Bug Fixes
+
+* :bug: Decatalized return error string ([85ad82e](https://github.com/POCOCZE/imsy/commit/85ad82e5b2679bab1d3701f703ef9d30fb2f9451))
+
 ## [1.0.2](https://github.com/POCOCZE/imsy/compare/backend/core/v1.0.1...backend/core/v1.0.2) (2026-09-12)
 
 
