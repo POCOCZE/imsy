@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: backend/core/go.sum
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # ratchet:golangci/golangci-lint-action@v9
         with:
-          version: v2.13.1
+          version: v2.15.0
           working-directory: backend/core
 
   lint-self-hosted:
@@ -38,5 +38,5 @@ jobs:
           cache-dependency-path: backend/self-hosted/go.sum
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # ratchet:golangci/golangci-lint-action@v9
         with:
-          version: v2.13.1
+          version: v2.15.0
           working-directory: backend/self-hosted
