@@ -1,9 +1,10 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/pococze/imsy/backend/core"
 )
@@ -13,7 +14,7 @@ func StartServer(port string, store core.IncidentStorage, logger *slog.Logger) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/healthz", core.HealthHandler(logger))
 	mux.HandleFunc("GET /api/report", core.GetReportHandler(store, logger))
-	mux.HandleFunc("GET /api/incidents", core.GetAllHandler(store))
+	mux.HandleFunc("GET /api/incidents", core.GetAllHandler(store, logger))
 	mux.HandleFunc("POST /api/incidents", core.AddListHandler(store, logger))
 	mux.HandleFunc("POST /api/incident", core.AddHandler(store, logger))
 	mux.HandleFunc("PATCH /api/incident/{id}", core.EditHandler(store, logger))
@@ -25,13 +26,15 @@ func StartServer(port string, store core.IncidentStorage, logger *slog.Logger) {
 
 	// empty function during development. During compilation the parameter -production is used to 
 	if err := registerFrontend(mux); err != nil {
-		log.Fatalf("[StartServer] failed to serve frontend: %s", err)
+		logger.Error(fmt.Sprintf("failed to serve frontend: %s", err))
+		os.Exit(1)
 	}
 
 	// handler := CorsMiddleware(mux)
 	logger.Info("server listening", "port", port)
 	err := http.ListenAndServe(":"+port, mux)
 	if err != nil {
-		log.Fatalf("error starting HTTP server: %s", err)
+		logger.Error(fmt.Sprintf("failed to start HTTP server: %s", err))
+		os.Exit(1)
 	}
 }

@@ -6,47 +6,57 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/pococze/imsy/backend/core"
 )
 
 // encrypts string data to b64 encoded AES-GCM string
 func (p *PostgresStore) EncryptToGCM(data string) string {
+	logger := p.Logger.With("func", "EncryptToGCM")
+
 	// create nonce - unique
 	nonce := make([]byte, p.GCM.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
 		// the probability of this failing is very small
-		log.Fatalf("[CallbackHandler] failed to generate nonce: %s", err)
+		logger.Error(fmt.Sprintf("failed to generate nonce: %s", err))
+		os.Exit(1)
 	}
 
+	logger.Debug("successfully encrypted plaintext")
 	encrypted := p.GCM.Seal(nonce, nonce, []byte(data), nil)
 	encryptedB64 := base64.StdEncoding.EncodeToString(encrypted)
 	return encryptedB64
 }
 
 func (p *PostgresStore) DecryptFromGCM(encryptedB64 string) (string, error) {
+	logger := p.Logger.With("func", "DecryptFromGCM")
+
 	// decode base64 encoded string
 	encrypted, err := base64.StdEncoding.DecodeString(encryptedB64)
 	if err != nil {
-		return "", fmt.Errorf("[DecryptFromGCM] failed to decode base64 encoded string: %s", err)
+		return "", fmt.Errorf("failed to decode base64 encoded string: %s", err)
 	}
 	nonce := encrypted[:p.GCM.NonceSize()]
 	ciphertext := encrypted[p.GCM.NonceSize():]
 	
 	plaintext, err := p.GCM.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", fmt.Errorf("[DecryptFromGCM] failed to decrypt data: %s", err)
+		return "", fmt.Errorf("failed to decrypt data: %s", err)
 	}
+	logger.Debug("successfully decrypted ciphertext")
 	return string(plaintext), nil
 }
 
 // Using hashing because the encrypted output can be effortlessly sorted, compared to AES-GCM encryption
 func (p *PostgresStore) EncryptToHMAC(plaintext string, hmacKeyB64 string) string {
+	logger := p.Logger.With("func", "EncryptToHMAC")
+
 	// decode the B64 hmacKey first
 	hmacKey, err := base64.StdEncoding.DecodeString(hmacKeyB64)
 	if err != nil {
-		log.Fatalf("[EncryptToHMAC] failed to base64 decode string value with env var key %q: %s", EnvHMACEncryptKey, err)
+		logger.Error(fmt.Sprintf("failed to base64 decode string value with env var key %q: %s", EnvHMACEncryptKey, err))
+		os.Exit(1)
 	}
 
 	h := hmac.New(sha256.New, hmacKey)
@@ -68,18 +78,20 @@ func (p *PostgresStore) EncryptIncidentCols(enc *core.EncIncidentCols) *core.Enc
 
 // decrypt important columns in one place
 func (p *PostgresStore) DecIncidentCols(enc *core.EncIncidentCols) (*core.EncIncidentCols, error) {
+	logger := p.Logger.With("func", "DecIncidentCols")
+
 	var err error
 	if enc.Name, err = p.DecryptFromGCM(enc.Name); err != nil {
-		p.Logger.Error("failed to decrypt encrypted string", "error", err, "func", "DecIncidentCols")
-		return nil, fmt.Errorf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
+		logger.Error(fmt.Sprintf("failed to decrypt encrypted string: %s", err))
+		return nil, fmt.Errorf("failed to decrypt encrypted string: %s", err)
 	}
 	if enc.Title, err = p.DecryptFromGCM(enc.Title); err != nil {
-		p.Logger.Error("failed to decrypt encrypted string", "error", err, "func", "DecIncidentCols")
-		return nil, fmt.Errorf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
+		logger.Error(fmt.Sprintf("failed to decrypt encrypted string: %s", err))
+		return nil, fmt.Errorf("failed to decrypt encrypted string: %s", err)
 	}
 	if enc.ServiceName, err = p.DecryptFromGCM(enc.ServiceName); err != nil {
-		p.Logger.Error("failed to decrypt encrypted string", "error", err, "func", "DecIncidentCols")
-		return nil, fmt.Errorf("[DecIncidentCols] failed to decrypt encrypted string: %s", err)
+		logger.Error(fmt.Sprintf("failed to decrypt encrypted string: %s", err))
+		return nil, fmt.Errorf("failed to decrypt encrypted string: %s", err)
 	}
 	return enc, nil
 }

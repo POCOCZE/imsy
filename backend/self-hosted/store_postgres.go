@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"time"
@@ -29,7 +28,8 @@ type PostgresStore struct {
 	Enc		core.EncIncidentCols
 }
 
-func NewPostgresStore(ctx context.Context, connString string, logger *slog.Logger) (*PostgresStore, error) {
+func NewPostgresStore(ctx context.Context, connString string, log *slog.Logger) (*PostgresStore, error) {
+	logger := log.With("func", "NewPostgresStore")
 	pool, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("oppening database: %w", err)
@@ -43,18 +43,20 @@ func NewPostgresStore(ctx context.Context, connString string, logger *slog.Logge
 	encryptionKeyB64 := os.Getenv(EnvEncryptionKey)
 	encryptionKey, err := base64.StdEncoding.DecodeString(encryptionKeyB64)
 	if err != nil {
-		log.Fatalf("failed to base64 decode string value with env var key %q", EnvEncryptionKey)
-		// log.Fatalf("failed to base64 decode string value with env var key %q", EnvTransportEncryptKey)
+		logger.Error(fmt.Sprintf("failed to base64 decode string value with env var key %q: %s", EnvEncryptionKey, err))
+		os.Exit(1)
 	}
 
 	// build the GCM
 	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
-		log.Fatalf("[NewPostgresStore] failed to create new aes cipher: %s", err)
+		logger.Error(fmt.Sprintf("[NewPostgresStore] failed to create new aes cipher: %s", err))
+		os.Exit(1)
 	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		log.Fatalf("[NewPostgresStore] failed to create new gcm: %s", err)
+		logger.Error(fmt.Sprintf("[NewPostgresStore] failed to create new gcm: %s", err))
+		os.Exit(1)
 	}
 
 	queries := database.New(pool)
@@ -224,12 +226,12 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 			CreatedAt: timeToPgTimestamptz(incident.CreatedAt),
 			UpdatedAt: timeToPgTimestamptz(incident.UpdatedAt),
 		}); err != nil {
-			return 0, uuid.Nil, fmt.Errorf("[Add] failed to add incident: %s", err)
+			return 0, uuid.Nil, fmt.Errorf("failed to add incident: %s", err)
 		}
 		return 0, id, nil
 	}
 	if err != nil {
-		return 0, uuid.Nil, fmt.Errorf("[Add] failed to add incident: %s", err)
+		return 0, uuid.Nil, fmt.Errorf("failed to add incident: %s", err)
 	}
 
 	var duplicateCount int
@@ -309,7 +311,7 @@ func (p *PostgresStore) GetAll(ctx context.Context) (*[]core.Incident, error) {
 			ServiceName: inc.ServiceName,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("[GetAll] failed to get incidents: %s", err)
+			return nil, fmt.Errorf("failed to get incidents: %s", err)
 		}
 		inc.Name = decIncidentCols.Name
 		inc.Title = decIncidentCols.Title
@@ -337,7 +339,7 @@ func (p *PostgresStore) GetByID(ctx context.Context, id uuid.UUID) (*core.Incide
 		ServiceName: inc.ServiceName,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("[GetAll] failed to get incidents: %s", err)
+		return nil, fmt.Errorf("failed to get incidents: %s", err)
 	}
 	inc.Name = decIncidentCols.Name
 	inc.Title = decIncidentCols.Title
@@ -366,7 +368,7 @@ func (p *PostgresStore) GetByName(ctx context.Context, name string) (*core.Incid
 		ServiceName: inc.ServiceName,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("[GetAll] failed to get incidents: %s", err)
+		return nil, fmt.Errorf("failed to get incidents: %s", err)
 	}
 	inc.Name = decIncidentCols.Name
 	inc.Title = decIncidentCols.Title
