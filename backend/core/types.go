@@ -7,17 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// type Incident struct {
-// 	ID         string `json:"id" validate:"required"`
-// 	Title      string `json:"title" validate:"required"`
-// 	Severity   string `json:"severity" validate:"required"`
-// 	ServiceName    string `json:"service_name" validate:"required"`
-// 	StartedAt  *time.Time `json:"started_at" validate:"required"`
-// 	ResolvedAt *time.Time `json:"resolved_at"`
-// 	// Message	   string `json:"message"`
-// 	// IsResolved bool `json:"is_resolved"`
-// }
-
 type Incident struct {
 	ID          	uuid.UUID 	`json:"id"`
 	OrgID       	uuid.UUID 	`json:"org_id"`
@@ -32,15 +21,6 @@ type Incident struct {
 	CreatedAt   	*time.Time 	`json:"created_at"`
 	UpdatedAt   	*time.Time 	`json:"updated_at"`
 }
-
-// type IncidentImportExport struct {
-// 	Name        string 		`json:"name" validate:"required"`
-// 	Title       string 		`json:"title" validate:"required"`
-// 	Severity    string 		`json:"severity" validate:"required"`
-// 	ServiceName string 		`json:"service_name" validate:"required"`
-// 	StartedAt   *time.Time 	`json:"started_at" validate:"required"`
-// 	ResolvedAt  *time.Time 	`json:"resolved_at"`
-// }
 
 type IncidentsFile struct {
 	Incidents *[]Incident `json:"incidents"`
