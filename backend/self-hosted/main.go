@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"os"
-	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,7 +22,7 @@ var isDevModeOn bool
 
 var (
     EnvLogLevel = "LOG_LEVEL"
-    EnvLogFormat = "LOG_FORMAT"
+    // EnvLogFormat = "LOG_FORMAT"
     EnvIncOrgID = "INC_ORG_ID"
     EnvIncUserID = "INC_USER_ID"
     EnvIncPgConn = "INC_DB_CONN"
@@ -31,26 +33,29 @@ var (
     EnvHMACEncryptKey = "HMAC_ENCRYPTION_KEY"
 )
 
-var ValidLogLevels []string = []string{"info", "warn", "error", "debug"}
-var ValidLogFormats []string = []string{"jsonl", "text"}
+// var ValidLogLevels []string = []string{"info", "warn", "error", "debug"}
+// var ValidLogFormats []string = []string{"jsonl", "text"}
 
 // Setting environemnt variables is optional, but recommended because every app startup generates new UUIDs when env. vars not specified. When no env vars in UUIDv7 format is provided, it will be generated. Generated UUIDs are printed.
-func checkEnvironmentVariables(logger *slog.Logger) {
+func checkEnvironmentVariables(log *slog.Logger) {
+    logger := log.With("func", "checkEnvironmentVariables")
+    
     var err error
-
     // Check OrgID
     incOrgIDStr, orgExist := os.LookupEnv(EnvIncOrgID)
     if !orgExist {
         incOrgID, err = uuid.NewV7()
         if err != nil {
-            log.Fatalf("failed to create UUIDv7: %s", err)
+            logger.Error(fmt.Sprintf("failed to create UUIDv7: %s", err))
+            os.Exit(1)
         }
         // logger.Info("system generated UUIDv7")
         logger.Info("system generated organization (orgID)", "id", incOrgID.String())
     } else {
         incOrgID, err = uuid.Parse(incOrgIDStr)
         if err != nil {
-            log.Fatalf("failed to parse string to UUID: %s", err)
+            logger.Error(fmt.Sprintf("failed to parse string to UUID: %s", err))
+            os.Exit(1)
         }
         // logger.Info("✓ found %q env var", EnvIncOrgID)
     }
@@ -60,13 +65,15 @@ func checkEnvironmentVariables(logger *slog.Logger) {
     if !userExist {
         incUserID, err = uuid.NewV7()
         if err != nil {
-            log.Fatalf("failed to create UUIDv7: %s", err)
+            logger.Error(fmt.Sprintf("failed to create UUIDv7: %s", err))
+            os.Exit(1)
         }
         logger.Info("system generated user (userID)", "id", incUserID.String())
     } else {
         incUserID, err = uuid.Parse(incUserIDStr)
         if err != nil {
-            log.Fatalf("failed to parse string to UUID: %s", err)
+            logger.Error(fmt.Sprintf("failed to parse string to UUID: %s", err))
+            os.Exit(1)
         }
         // logger.Info("✓ found %q env var", EnvIncUserID)
     }
@@ -74,7 +81,7 @@ func checkEnvironmentVariables(logger *slog.Logger) {
     // Check for development mode
     isDevModeOnStr, exist := os.LookupEnv(EnvIncDevMode)
     if !exist {
-        logger.Info("dev flag not speficied. running normal mode.", "flag", EnvIncDevMode)
+        logger.Info("dev mode not speficied. running normal mode.")
         isDevModeOn = false
     } else {
         if strings.ToLower(isDevModeOnStr) == "false" {
@@ -135,78 +142,20 @@ func checkEnvironmentVariables(logger *slog.Logger) {
     logger.Info("✓ environment variable check executed successfully")
 }
 
-// Checks for log level and log format provided by the user.
-func checkLogLevelAndFormat() *slog.Logger {
-    // Check log format
-    logFormat, exist := os.LookupEnv(EnvLogFormat)
-    if !exist {
-        log.Fatalf("log format var not found (%s). options: 'jsonl', 'text'.", EnvLogFormat)
-    } else if !slices.Contains(ValidLogFormats, logFormat) {
-        log.Fatalf("log format not valid. options: 'jsonl', 'text'.")
-    }
-
-    // Check log level
-    logLevel, exist := os.LookupEnv(EnvLogLevel)
-    if !exist {
-        log.Fatalf("log level var not found (%s). options: 'info', 'warn', 'error', 'debug'.", EnvLogLevel)
-    } else if !slices.Contains(ValidLogLevels, logLevel) {
-        log.Fatalf("log level not valid. options: 'info', 'warn', 'error', 'debug'.")
-    }
-
-    var logger *slog.Logger
-
-    switch strings.ToLower(logFormat) {
-    case "jsonl":
-        switch strings.ToLower(logLevel) {
-        case "info":
-            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelInfo,
-            }))
-        case "warn":
-            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelWarn,
-            }))
-        case "error":
-            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelError,
-            }))
-        case "debug":
-            logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelDebug,
-            }))
-        }
-    case "text":
-        switch strings.ToLower(logLevel) {
-        case "info":
-            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelInfo,
-            }))
-        case "warn":
-            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelWarn,
-            }))
-        case "error":
-            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelError,
-            }))
-        case "debug":
-            logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-                Level: slog.LevelDebug,
-            }))
-        }
-    }
-
-    return logger
+// Checks for log level
+func NewLogger(w io.Writer, lvl slog.Level) *slog.Logger {
+	h := slog.NewJSONHandler(w, &slog.HandlerOptions{Level: lvl})
+	return slog.New(h)
 }
 
 func main() {
-    // logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-    // logger := slog.Default()
-    // logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-    //     Level: slog.LevelDebug,
-    // }))
+	level, err := strconv.Atoi(os.Getenv(EnvLogLevel))
+	if err != nil {
+		log.Printf("failed to parse string-to-int for env var %q: %s", EnvLogLevel, err)
+		os.Exit(1)
+	}
 
-    logger := checkLogLevelAndFormat()
+    logger := NewLogger(os.Stdout, slog.Level(level))
     slog.SetDefault(logger)
 
 	logger.Info("+-----------------------+")
@@ -222,7 +171,8 @@ func main() {
 
     if len(os.Args) > 1 && os.Args[1] == "migrate" {
         if err := RunDBMigration(ctx, logger); err != nil {
-            log.Fatalf("Failed to run DB migration: %s", err)
+            logger.Error(fmt.Sprintf("failed to run DB migration: %s", err))
+            os.Exit(1)
         }
         os.Exit(0)
     }
@@ -236,7 +186,8 @@ func main() {
         logger.Info("using database...")
         store, err = NewPostgresStore(ctx, pgConn, logger)
         if err != nil {
-            log.Fatalf("ERR: %s", err)
+            logger.Error(fmt.Sprintf("failed to initialize postgres: %s", err))
+            os.Exit(1)
         }
         logger.Info("✓ successfully connected to database")
     // Run development mode if postgres connection string is not specified and '-dev' parameter is specified.
@@ -251,7 +202,8 @@ func main() {
         logger.Info("+---------------------------------------+")
         logger.Info("")
     } else {
-        log.Fatalf("error: cannot speficy development mode and postgres conn string.\n\nquitting immidiately.")
+        logger.Error("cannot speficy development mode and postgres conn string.\n\nquitting immidiately.")
+        os.Exit(1)
     }
 
     // Start HTTP server on specified port
