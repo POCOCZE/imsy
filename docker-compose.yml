@@ -2,10 +2,12 @@ services:
   imsy:
     image: ghcr.io/pococze/imsy:latest
     environment:
+      # LevelDebug is -4, LevelInfo is 0, LevelWarn is 4, and LevelError is 8.
+      LOG_LEVEL: 0
       # Choose from: info, warn, error, debug
-      LOG_LEVEL: "info"
+      # LOG_LEVEL: "info"
       # Choose from: jsonl, text
-      LOG_FORMAT: "jsonl"
+      # LOG_FORMAT: "text"
       # All data are temporarilly stored in memory, if true
       INC_DEV_MODE: true
     restart: unless-stopped
