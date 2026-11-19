@@ -2,20 +2,20 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"net/http"
 	"strings"
 )
 
 // Health status endpoint
-func HealthHandler(logger *slog.Logger) http.HandlerFunc {
+func HealthHandler(log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger := log.With("component", "HealthHandler")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		logger.Debug("application status", "healthy", true)
-		EncodeJSON(w, map[string]string{"status": "ok"}, "")
+		EncodeJSON(w, map[string]string{"status": "ok"}, "", logger)
 	}
 }
 
@@ -45,7 +45,8 @@ func SPAHandler(staticFS fs.FS, fileServer http.Handler) http.HandlerFunc {
 }
 
 // Used to structure JSON encoded responses.
-func EncodeJSON(w http.ResponseWriter, content any, errMessage string) {
+func EncodeJSON(w http.ResponseWriter, content any, errMessage string, log *slog.Logger) {
+	logger := log.With("func", "EncodeJSON")
 	if errMessage == "" {
 		// If custom error message variable is empty, use default
 		errMessage = "error encoding response"
@@ -53,7 +54,6 @@ func EncodeJSON(w http.ResponseWriter, content any, errMessage string) {
 
 	err := json.NewEncoder(w).Encode(content)
 	if err != nil {
-		// Todo: switch to slog
-		log.Printf("%s: %s", errMessage, err)
+		logger.Error(fmt.Sprintf("%s: %s", errMessage, err))
 	}
 }
