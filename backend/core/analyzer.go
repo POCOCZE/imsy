@@ -36,7 +36,7 @@ func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) erro
 
     // Calculate average MTTR across all resolved incidents.
     if len(durations) == 0 {
-        return fmt.Errorf("you don't have any incidents yet")
+        return fmt.Errorf("You don't have any incidents yet")
     }
     resolvedIncidentCount := r.IncidentsCount - len(r.UnresolvedNames)
     avgSeconds := int(sum / float64(resolvedIncidentCount))
