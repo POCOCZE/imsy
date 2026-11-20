@@ -167,7 +167,7 @@ func DeleteByIDHandler(store IncidentStorage, log *slog.Logger) http.HandlerFunc
 		uuid, err := uuid.Parse(id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			logger.Error("failed to parse string to UUIDv7", "error", err)
+			logger.Error(fmt.Sprintf("failed to parse string to UUIDv7: %s", err))
 			return
 		}
 
