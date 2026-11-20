@@ -153,7 +153,7 @@ func GetAllHandler(store IncidentStorage, log *slog.Logger) http.HandlerFunc{
 			return
 		}
 		EncodeJSON(w, incidents, "", logger)
-		logger.Info("returned all incidents", "couint", len(*incidents))
+		logger.Info("returned all incidents", "count", len(*incidents))
 	}
 }
 
