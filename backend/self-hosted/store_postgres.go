@@ -144,7 +144,9 @@ func (p *PostgresStore) pgIncidentToIncident(pgIncident database.Incident) (*cor
 	return &params, nil
 }
 
+// Adds new incident to dabase. Replaces OrgID and UserID (CreatedBy) fields when importing from an export
 func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, uuid.UUID, error) {
+	logger := p.Logger.With("func", "Add")
 	// Pre-check that incident fields (name, title, service_name) are 4 or more chars
 	minFieldLength := 4
 	checkFieldsLength := map[string]string{
@@ -163,41 +165,34 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 	inc, err := p.GetByName(ctx, incident.Name)
 	var id uuid.UUID
 	if errors.Is(err, pgx.ErrNoRows) {
-		p.Logger.Debug("got (errNoRows) adding unique incident", "error", err)
+		logger.Debug(fmt.Sprintf("adding one unique incident: %s", err))
 		// Incident does not exist - add it
 		// Assign UUIDv7 if not already set
-		// p.Logger.Debug("Got incidentID %q", incident.ID)
+		// logger.Debug("Got incidentID %q", incident.ID)
 		if incident.ID == uuid.Nil {
 			id, err = uuid.NewV7()
 			if err != nil {
 				return 0, uuid.Nil, fmt.Errorf("failed to generate UUIDv7: %s", err)
 			}
-			p.Logger.Debug("generated UUIDv7", "func", "Add", "name", id.String())
 			incident.ID = id
 		}
 		// Assign OrgID if incident does not have it already (could have it in cases when importing a bunch of incidents from file)
 		if incident.OrgID == uuid.Nil {
-			p.Logger.Debug("setting incOrgID", "func", "Add", "name", incOrgID.String())
 			incident.OrgID = incOrgID
 		}
 		// Assign current time to StartedAt field if empty
 		if incident.StartedAt == nil || incident.StartedAt.IsZero() {
-			p.Logger.Debug("setting current time to new incident for startedAt field", "func", "Add", "name", incident.ID.String())
+			logger.Debug("setting current time to new incident for startedAt field", "incident", incident.ID.String())
 			incident.StartedAt = CurrentUTCTime()
-		}
-		// Assign UserID to CreatedBy field
-		if incident.CreatedBy == uuid.Nil {
-			p.Logger.Debug("setting incUserID", "func", "Add", "name", incUserID.String())
-			incident.CreatedBy = incUserID
 		}
 		// Assign current time to CreatedAt field if not exist
 		if incident.CreatedAt == nil || incident.CreatedAt.IsZero() {
-			p.Logger.Debug("setting current time to new incident for createdAt field", "func", "Add", "name", incident.ID.String())
+			logger.Debug("setting current time to new incident for createdAt field", "incident", incident.ID.String())
 			incident.CreatedAt = CurrentUTCTime()
 		}
 		// Assign current time to UpdatedAt field if not exist
 		if incident.UpdatedAt == nil || incident.UpdatedAt.IsZero() {
-			p.Logger.Debug("setting current time to new incident for updatedAt field", "func", "Add", "name", incident.ID.String())
+			logger.Debug("setting current time to new incident for updatedAt field", "incident", incident.ID.String())
 			incident.UpdatedAt = CurrentUTCTime()
 		}
 
@@ -213,7 +208,7 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 
 		if err := p.Queries.Add(ctx, database.AddParams{
 			ID: UUIDToPgUUID(incident.ID),
-			OrgID: UUIDToPgUUID(incident.OrgID),
+			OrgID: UUIDToPgUUID(incOrgID),
 			Name: encIncidentCols.Name,
 			// put the newly generated hash here
 			NameBlindIdx: core.StringToPgText(incident.NameBlindIdx),
@@ -222,7 +217,7 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 			ServiceName: encIncidentCols.ServiceName,
 			StartedAt: timeToPgTimestamptz(incident.StartedAt),
 			ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
-			CreatedBy: UUIDToPgUUID(incident.CreatedBy),
+			CreatedBy: UUIDToPgUUID(incUserID),
 			CreatedAt: timeToPgTimestamptz(incident.CreatedAt),
 			UpdatedAt: timeToPgTimestamptz(incident.UpdatedAt),
 		}); err != nil {
@@ -237,9 +232,9 @@ func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, 
 	var duplicateCount int
 	// Must check for names because UUIDs are meant to be unique
 	if inc.Name == incident.Name {
-		p.Logger.Debug("found duplicate incident", "func", "Add", "name", inc.Name)
+		logger.Debug("found duplicate incident", "name", inc.Name)
 		duplicateCount = 1
-		p.Logger.Warn("skipping incident that already exist", "func", "Add", "name", incident.Name)
+		logger.Warn("skipping incident that already exist", "name", incident.Name)
 	}
 	return duplicateCount, id, nil
 }
