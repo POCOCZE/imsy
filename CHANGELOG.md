@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/POCOCZE/imsy/compare/v1.1.0...v1.1.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* :pencil2: Fixed typo ([544af50](https://github.com/POCOCZE/imsy/commit/544af502674c121fb71efeca67d4052851c7fa29))
+* more consistent slog logging across codebase ([ae6850f](https://github.com/POCOCZE/imsy/commit/ae6850f0f9c5cc40836f33c734a13a22171432af))
+* updated the rest of the logging to slog. ([87a1ea9](https://github.com/POCOCZE/imsy/commit/87a1ea9907cbad02914dbe53f8448a931470e5e0))
+
 ## [1.1.0](https://github.com/POCOCZE/imsy/compare/v1.0.5...v1.1.0) (2026-11-19)
 
 
