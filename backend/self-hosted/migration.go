@@ -17,17 +17,18 @@ import (
 var migrationFiles embed.FS
 
 // Run database migrations using pressly/goose library
-func RunDBMigration(ctx context.Context, logger *slog.Logger) (err error) {
+func RunDBMigration(ctx context.Context, log *slog.Logger) (err error) {
+	logger := log.With("func", "RunDBMigration")
 	if os.Getenv(EnvIncPgConn) == "" {
-		return fmt.Errorf("[RunDBMigration] Postgres connection string is required to run database migrations. Mandatory env. var. %q", EnvIncPgConn)
+		return fmt.Errorf("postgres connection string is required to run database migrations. Mandatory env. var. %q", EnvIncPgConn)
 	}
-	logger.Info("Found pg conn string. Starting database migrations", "func", "RunDBMigration")
+	logger.Info("found pg conn string. Starting database migrations")
 
 	// Open database and open migration files
 	pgConn := os.Getenv(EnvIncPgConn)
 	db, err := sql.Open("pgx", pgConn)
 	if err != nil {
-		return fmt.Errorf("[RunDBMigration] failed to open database connection: %s", err)
+		return fmt.Errorf("failed to open database connection: %s", err)
 	}
 	defer func () {
 		if closeErr := db.Close(); closeErr != nil {
@@ -36,11 +37,11 @@ func RunDBMigration(ctx context.Context, logger *slog.Logger) (err error) {
 	}()
 
 	if err := db.PingContext(ctx); err != nil {
-		return fmt.Errorf("[RunDBMigration] failed to ping database: %s", err)
+		return fmt.Errorf("failed to ping database: %s", err)
 	}
 	migrationFS, err := fs.Sub(migrationFiles, "migrations")
 	if err != nil {
-		return fmt.Errorf("[RunDBMigration] failed to load migration files: %s", err)
+		return fmt.Errorf("failed to load migration files: %s", err)
 	}
 
 	// create Goose provider and apply migrations
@@ -50,7 +51,7 @@ func RunDBMigration(ctx context.Context, logger *slog.Logger) (err error) {
 		goose.WithTableName("goose_db_version"),
 	)
 	if err != nil {
-		return fmt.Errorf("[RunDBMigration] failed to create new goose provider: %s", err)
+		return fmt.Errorf("failed to create new goose provider: %s", err)
 	}
 	defer func() {
 		if closeErr := provider.Close(); closeErr != nil {
@@ -60,14 +61,14 @@ func RunDBMigration(ctx context.Context, logger *slog.Logger) (err error) {
 
 	applied, err := provider.Up(ctx)
 	if err != nil {
-		return fmt.Errorf("[RunDBMigration] failed to apply goose migrations: %s", err)
+		return fmt.Errorf("failed to apply goose migrations: %s", err)
 	}
 
 	// print gathered info ot stdout
 	for _, migration := range applied {
-		slog.Info("migration applied", "func", "RunDBMigration", "migration", migration.String())
+		slog.Info("migration applied", "migration", migration.String())
 	}
 
-	slog.Info("Database migrations completed successfully", "func", "RunDBMigration", "count", len(applied))
+	slog.Info("Database migrations completed successfully", "count", len(applied))
 	return nil
 }
